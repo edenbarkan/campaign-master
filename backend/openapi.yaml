@@ -1,0 +1,694 @@
+openapi: 3.0.3
+info:
+  title: Campaign Master API
+  version: "1.0"
+  description: |
+    REST API for Campaign Master covering authentication, wallets, marketplace,
+    ad serving, tracking, and reports.
+servers:
+  - url: http://localhost:5001
+paths:
+  /api/auth/register:
+    post:
+      summary: Register user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/auth/login:
+    post:
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login success
+          headers:
+            Set-Cookie:
+              description: Flask session cookie.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/auth/me:
+    get:
+      summary: Current session user
+      responses:
+        '200':
+          description: Authenticated user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/auth/logout:
+    post:
+      summary: Logout user
+      responses:
+        '200':
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/wallet:
+    get:
+      summary: Get wallet
+      responses:
+        '200':
+          description: Wallet payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalletResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/wallet/topup:
+    post:
+      summary: Top up wallet (advertisers only)
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount_micro:
+                  type: integer
+                  description: Amount in micro units.
+      responses:
+        '200':
+          description: Updated wallet
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopupResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /api/advertiser/campaigns:
+    post:
+      summary: Create campaign
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    get:
+      summary: List campaigns
+      responses:
+        '200':
+          description: List of campaigns
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  campaigns:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Campaign'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/advertiser/campaigns/{campaign_id}/status:
+    patch:
+      summary: Update campaign status
+      parameters:
+        - $ref: '#/components/parameters/CampaignId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/MessageOnly'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/advertiser/campaigns/{campaign_id}/ads:
+    post:
+      summary: Create ad
+      parameters:
+        - $ref: '#/components/parameters/CampaignId'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    get:
+      summary: List ads
+      parameters:
+        - $ref: '#/components/parameters/CampaignId'
+      responses:
+        '200':
+          description: Ads list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ads:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Ad'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/advertiser/ads/{ad_id}/status:
+    patch:
+      summary: Update ad status
+      parameters:
+        - name: ad_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          $ref: '#/components/responses/MessageOnly'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/publisher/sites:
+    post:
+      summary: Create site
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SiteResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    get:
+      summary: List sites
+      responses:
+        '200':
+          description: Sites list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sites:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Site'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/publisher/sites/{site_id}:
+    patch:
+      summary: Update site
+      parameters:
+        - $ref: '#/components/parameters/SiteId'
+      responses:
+        '200':
+          $ref: '#/components/responses/MessageOnly'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/publisher/sites/{site_id}/slots:
+    post:
+      summary: Create slot
+      parameters:
+        - $ref: '#/components/parameters/SiteId'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SlotResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    get:
+      summary: List slots
+      parameters:
+        - $ref: '#/components/parameters/SiteId'
+      responses:
+        '200':
+          description: Slots list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  slots:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Slot'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/publisher/slots/{slot_id}/status:
+    patch:
+      summary: Update slot status
+      parameters:
+        - name: slot_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          $ref: '#/components/responses/MessageOnly'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/reports/advertiser:
+    get:
+      summary: Advertiser totals
+      responses:
+        '200':
+          description: Totals
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdvertiserReport'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /api/reports/publisher:
+    get:
+      summary: Publisher totals
+      responses:
+        '200':
+          description: Totals
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublisherReport'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /api/adserve:
+    get:
+      summary: Serve ad
+      parameters:
+        - name: slot_id
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: HTML snippet with ad creative
+          content:
+            text/html:
+              schema:
+                type: string
+        '204':
+          description: No eligible ad
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /api/track/impression:
+    get:
+      summary: Track impression
+      parameters:
+        - name: request_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Tracked or already recorded
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Reservation expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/track/click:
+    get:
+      summary: Track click
+      parameters:
+        - name: request_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '302':
+          description: Redirect to landing URL
+          headers:
+            Location:
+              schema:
+                type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Reservation expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  parameters:
+    CampaignId:
+      name: campaign_id
+      in: path
+      required: true
+      schema:
+        type: integer
+    SiteId:
+      name: site_id
+      in: path
+      required: true
+      schema:
+        type: integer
+  schemas:
+    RegisterRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+        is_advertiser:
+          type: boolean
+        is_publisher:
+          type: boolean
+    RegisterResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        user:
+          $ref: '#/components/schemas/User'
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+    LoginResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        user:
+          $ref: '#/components/schemas/User'
+    UserResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+    TopupResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        wallet:
+          $ref: '#/components/schemas/Wallet'
+    WalletResponse:
+      type: object
+      properties:
+        wallet:
+          $ref: '#/components/schemas/Wallet'
+    Wallet:
+      type: object
+      properties:
+        user_id:
+          type: integer
+        balance_micro:
+          type: integer
+        reserved_micro:
+          type: integer
+        available_micro:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+    CampaignResponse:
+      type: object
+      properties:
+        campaign:
+          $ref: '#/components/schemas/Campaign'
+        message:
+          type: string
+    Campaign:
+      type: object
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: integer
+        name:
+          type: string
+        status:
+          type: string
+        bid_cpm_micro:
+          type: integer
+        bid_cpc_micro:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+    AdResponse:
+      type: object
+      properties:
+        ad:
+          $ref: '#/components/schemas/Ad'
+        message:
+          type: string
+    Ad:
+      type: object
+      properties:
+        id:
+          type: integer
+        campaign_id:
+          type: integer
+        title:
+          type: string
+        image_url:
+          type: string
+        landing_url:
+          type: string
+        status:
+          type: string
+        created_at:
+          type: string
+    SiteResponse:
+      type: object
+      properties:
+        site:
+          $ref: '#/components/schemas/Site'
+        message:
+          type: string
+    Site:
+      type: object
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: integer
+        name:
+          type: string
+        domain:
+          type: string
+        created_at:
+          type: string
+    SlotResponse:
+      type: object
+      properties:
+        slot:
+          $ref: '#/components/schemas/Slot'
+        message:
+          type: string
+    Slot:
+      type: object
+      properties:
+        id:
+          type: integer
+        site_id:
+          type: integer
+        name:
+          type: string
+        width:
+          type: integer
+        height:
+          type: integer
+        floor_cpm_micro:
+          type: integer
+        floor_cpc_micro:
+          type: integer
+        status:
+          type: string
+        created_at:
+          type: string
+    AdvertiserReport:
+      type: object
+      properties:
+        totals:
+          type: object
+          properties:
+            impressions:
+              type: integer
+            clicks:
+              type: integer
+            spend_micro:
+              type: integer
+    PublisherReport:
+      type: object
+      properties:
+        totals:
+          type: object
+          properties:
+            impressions:
+              type: integer
+            clicks:
+              type: integer
+            earn_micro:
+              type: integer
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        is_advertiser:
+          type: boolean
+        is_publisher:
+          type: boolean
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+  responses:
+    BadRequest:
+      description: Invalid request body
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Conflict:
+      description: Resource conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    MessageOnly:
+      description: Simple message response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/MessageResponse'
