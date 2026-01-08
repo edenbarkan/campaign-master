@@ -1,4 +1,5 @@
-from datetime import datetime, timezone
+import os
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -19,11 +20,15 @@ from app.models import (
 
 @pytest.fixture
 def app():
-    app = create_app()
-    app.config['TESTING'] = True
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
-    app.config['SECRET_KEY'] = 'test-secret-key'
-    app.config['WTF_CSRF_ENABLED'] = False
+    db_url = os.getenv('DATABASE_URL', 'sqlite:///:memory:')
+    if not db_url:
+        db_url = 'sqlite:///:memory:'
+    app = create_app({
+        'TESTING': True,
+        'SQLALCHEMY_DATABASE_URI': db_url,
+        'SECRET_KEY': 'test-secret-key',
+        'WTF_CSRF_ENABLED': False,
+    })
 
     with app.app_context():
         db.create_all()
@@ -243,6 +248,120 @@ def test_publisher_totals_report(app, client):
     assert data['totals']['impressions'] == 1
     assert data['totals']['clicks'] == 1
     assert data['totals']['earn_micro'] == 600_900
+
+
+def test_reports_reflect_tracking_flow(app):
+    reserved_impression = 900
+    reserved_click = 600_000
+
+    with app.app_context():
+        advertiser = User(
+            email='flowadv@example.com',
+            is_advertiser=True,
+            is_publisher=False,
+        )
+        advertiser.set_password('password123')
+        publisher = User(
+            email='flowpub@example.com',
+            is_advertiser=False,
+            is_publisher=True,
+        )
+        publisher.set_password('password123')
+        db.session.add_all([advertiser, publisher])
+        db.session.commit()
+
+        adv_wallet = Wallet(
+            user_id=advertiser.id,
+            balance_micro=2_000_000,
+            reserved_micro=reserved_impression + reserved_click,
+        )
+        pub_wallet = Wallet(user_id=publisher.id, balance_micro=0, reserved_micro=0)
+
+        site = Site(
+            user_id=publisher.id,
+            name='Flow Site',
+            domain='flow.example.com',
+        )
+        slot = Slot(
+            site=site,
+            name='Flow Slot',
+            width=300,
+            height=250,
+            floor_cpm_micro=900_000,
+            floor_cpc_micro=600_000,
+            status='active',
+        )
+        campaign = Campaign(
+            user_id=advertiser.id,
+            name='Flow Campaign',
+            status='active',
+            bid_cpm_micro=1_500_000,
+            bid_cpc_micro=800_000,
+        )
+        ad = Ad(
+            campaign=campaign,
+            title='Flow Ad',
+            image_url='https://example.com/flow.png',
+            landing_url='https://example.com',
+            status='active',
+        )
+
+        db.session.add_all([adv_wallet, pub_wallet, site, slot, campaign, ad])
+        db.session.commit()
+
+        ad_request = AdRequest(
+            advertiser_id=advertiser.id,
+            publisher_id=publisher.id,
+            campaign_id=campaign.id,
+            ad_id=ad.id,
+            slot_id=slot.id,
+            price_cpm_micro=slot.floor_cpm_micro,
+            price_cpc_micro=slot.floor_cpc_micro,
+            reserved_impression_micro=reserved_impression,
+            reserved_click_micro=reserved_click,
+            reserved_until=datetime.now(timezone.utc) + timedelta(minutes=5),
+            status='active',
+        )
+        db.session.add(ad_request)
+        db.session.commit()
+
+        request_id = ad_request.request_id
+
+    client = app.test_client()
+
+    imp_resp = client.get(f'/api/track/impression?request_id={request_id}')
+    assert imp_resp.status_code == 204
+    click_resp = client.get(f'/api/track/click?request_id={request_id}')
+    assert click_resp.status_code == 302
+
+    session_client = app.test_client()
+
+    assert session_client.post('/api/auth/login', json={
+        'email': 'flowadv@example.com',
+        'password': 'password123',
+    }).status_code == 200
+
+    adv_report_resp = session_client.get('/api/reports/advertiser')
+    assert adv_report_resp.status_code == 200, adv_report_resp.get_json()
+    adv_report = adv_report_resp.get_json()['totals']
+
+    assert session_client.post('/api/auth/logout').status_code == 200
+    assert session_client.post('/api/auth/login', json={
+        'email': 'flowpub@example.com',
+        'password': 'password123',
+    }).status_code == 200
+
+    pub_report_resp = session_client.get('/api/reports/publisher')
+    assert pub_report_resp.status_code == 200, pub_report_resp.get_json()
+    pub_report = pub_report_resp.get_json()['totals']
+
+    assert adv_report['impressions'] == 1
+    assert adv_report['clicks'] == 1
+    assert adv_report['spend_micro'] == reserved_impression + reserved_click
+
+    assert pub_report['impressions'] == 1
+    assert pub_report['clicks'] == 1
+    assert pub_report['earn_micro'] == reserved_impression + reserved_click
 
 
 def test_advertiser_report_uses_campaign_owner(app, client):

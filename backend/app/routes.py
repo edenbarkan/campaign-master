@@ -35,15 +35,13 @@ def advertiser_report():
     impression_count = (
         db.session.query(func.coalesce(func.count(Impression.id), 0))
         .join(AdRequest, Impression.ad_request_id == AdRequest.id)
-        .join(Campaign, AdRequest.campaign_id == Campaign.id)
-        .filter(Campaign.user_id == current_user.id)
+        .filter(AdRequest.advertiser_id == current_user.id)
         .scalar()
     )
     click_count = (
         db.session.query(func.coalesce(func.count(Click.id), 0))
         .join(AdRequest, Click.ad_request_id == AdRequest.id)
-        .join(Campaign, AdRequest.campaign_id == Campaign.id)
-        .filter(Campaign.user_id == current_user.id)
+        .filter(AdRequest.advertiser_id == current_user.id)
         .scalar()
     )
     spend_micro = (
@@ -51,9 +49,13 @@ def advertiser_report():
         .filter(
             LedgerEntry.user_id == current_user.id,
             LedgerEntry.entry_type == 'spend',
+            LedgerEntry.ref_type.in_(('impression', 'click')),
         )
         .scalar()
     )
+    impression_count = int(impression_count or 0)
+    click_count = int(click_count or 0)
+    spend_micro = int(spend_micro or 0)
 
     return jsonify({
         'totals': {
@@ -87,9 +89,13 @@ def publisher_report():
         .filter(
             LedgerEntry.user_id == current_user.id,
             LedgerEntry.entry_type == 'earn',
+            LedgerEntry.ref_type.in_(('impression', 'click')),
         )
         .scalar()
     )
+    impression_count = int(impression_count or 0)
+    click_count = int(click_count or 0)
+    earn_micro = int(earn_micro or 0)
 
     return jsonify({
         'totals': {

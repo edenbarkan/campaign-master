@@ -6,13 +6,107 @@ from sqlalchemy.orm import joinedload
 
 from app import db
 from app.adserver.service import release_expired_reservations
-from app.models import Ad, AdRequest, Campaign, Slot, Wallet, LedgerEntry, Impression, Click
+from app.errors import json_error
+from app.models import (
+    Ad,
+    AdRequest,
+    Campaign,
+    Slot,
+    Wallet,
+    LedgerEntry,
+    Impression,
+    Click,
+)
 
 adserver_bp = Blueprint('adserver', __name__, url_prefix='/api')
 
 
 class ReservationError(Exception):
     """Raised when an ad cannot be reserved due to insufficient balance."""
+
+
+def _get_locked_wallet(session, user_id, *, create=False):
+    wallet = (
+        session.query(Wallet)
+        .filter(Wallet.user_id == user_id)
+        .with_for_update()
+        .one_or_none()
+    )
+    if wallet is None and create:
+        wallet = Wallet(user_id=user_id, balance_micro=0, reserved_micro=0)
+        session.add(wallet)
+        session.flush()
+    return wallet
+
+
+def _ensure_wallet_has_charge(wallet, charge):
+    """Ensure the wallet has enough reserved funds (borrowing from available if needed)."""
+    if charge <= 0 or wallet is None:
+        return False
+
+    if wallet.balance_micro < charge:
+        return False
+
+    if wallet.reserved_micro < charge:
+        missing = charge - wallet.reserved_micro
+        available = wallet.balance_micro - wallet.reserved_micro
+        if available < missing:
+            return False
+        wallet.reserved_micro += missing
+
+    return True
+
+
+def _record_impression_event(session, locked_request):
+    """Idempotently record an impression for the provided request."""
+    if locked_request.impression_tracked_at is not None:
+        return True, None
+
+    charge = locked_request.reserved_impression_micro
+    advertiser_wallet = _get_locked_wallet(
+        session,
+        locked_request.advertiser_id,
+        create=False,
+    )
+    publisher_wallet = _get_locked_wallet(
+        session,
+        locked_request.publisher_id,
+        create=True,
+    )
+
+    if not advertiser_wallet or not _ensure_wallet_has_charge(advertiser_wallet, charge):
+        locked_request.status = 'expired'
+        return False, json_error(409, 'Reservation expired')
+
+    advertiser_wallet.reserved_micro -= charge
+    advertiser_wallet.balance_micro -= charge
+    publisher_wallet.balance_micro += charge
+
+    spend_entry = LedgerEntry(
+        user_id=locked_request.advertiser_id,
+        entry_type='spend',
+        amount_micro=charge,
+        ref_type='impression',
+        ref_id=locked_request.id,
+    )
+    earn_entry = LedgerEntry(
+        user_id=locked_request.publisher_id,
+        entry_type='earn',
+        amount_micro=charge,
+        ref_type='impression',
+        ref_id=locked_request.id,
+    )
+
+    session.add_all([spend_entry, earn_entry])
+
+    impression = Impression(
+        ad_request_id=locked_request.id,
+        price_micro=charge,
+    )
+    session.add(impression)
+
+    locked_request.impression_tracked_at = datetime.utcnow()
+    return True, None
 
 
 def _eligible_ads_for_slot(slot):
@@ -57,54 +151,50 @@ def adserve():
     now = datetime.now(timezone.utc)
     reserved_until = now + timedelta(minutes=5)
 
-    session = db.session()
+    session = db.session
 
     for ad in candidates:
         campaign = ad.campaign
 
         try:
-            begin_transaction = (
-                session.begin_nested if session.in_transaction() else session.begin
+            release_expired_reservations(session, now=now)
+
+            wallet = (
+                session.query(Wallet)
+                .filter(Wallet.user_id == campaign.user_id)
+                .with_for_update()
+                .one_or_none()
             )
 
-            with begin_transaction():
-                release_expired_reservations(session, now=now)
+            if not wallet:
+                raise ReservationError('Wallet missing')
 
-                wallet = (
-                    session.query(Wallet)
-                    .filter(Wallet.user_id == campaign.user_id)
-                    .with_for_update()
-                    .one_or_none()
-                )
+            available_micro = wallet.balance_micro - wallet.reserved_micro
+            if available_micro < required_micro:
+                raise ReservationError('Insufficient balance')
 
-                if not wallet:
-                    raise ReservationError('Wallet missing')
+            wallet.reserved_micro += required_micro
 
-                available_micro = wallet.balance_micro - wallet.reserved_micro
-                if available_micro < required_micro:
-                    raise ReservationError('Insufficient balance')
+            request_id = str(uuid.uuid4())
+            ad_request = AdRequest(
+                request_id=request_id,
+                advertiser_id=campaign.user_id,
+                publisher_id=slot.site.user_id,
+                campaign_id=campaign.id,
+                ad_id=ad.id,
+                slot_id=slot.id,
+                price_cpm_micro=price_cpm_micro,
+                price_cpc_micro=price_cpc_micro,
+                reserved_impression_micro=impression_cost_micro,
+                reserved_click_micro=click_cost_micro,
+                reserved_until=reserved_until,
+                impression_tracked_at=None,
+                click_tracked_at=None,
+                status='active',
+            )
 
-                wallet.reserved_micro += required_micro
-
-                request_id = str(uuid.uuid4())
-                ad_request = AdRequest(
-                    request_id=request_id,
-                    advertiser_id=campaign.user_id,
-                    publisher_id=slot.site.user_id,
-                    campaign_id=campaign.id,
-                    ad_id=ad.id,
-                    slot_id=slot.id,
-                    price_cpm_micro=price_cpm_micro,
-                    price_cpc_micro=price_cpc_micro,
-                    reserved_impression_micro=impression_cost_micro,
-                    reserved_click_micro=click_cost_micro,
-                    reserved_until=reserved_until,
-                    impression_tracked_at=None,
-                    click_tracked_at=None,
-                    status='active',
-                )
-
-                session.add(ad_request)
+            session.add(ad_request)
+            session.commit()
 
             ad_html = (
                 f'<div class="ad">'
@@ -123,6 +213,7 @@ def adserve():
             session.rollback()
             continue
 
+    session.rollback()
     return ('', 204)
 
 
@@ -132,21 +223,22 @@ def track_impression():
     if not request_id:
         return jsonify({'error': 'request_id is required'}), 400
 
-    session = db.session()
+    session = db.session
 
     ad_request = session.query(AdRequest).filter_by(request_id=request_id).one_or_none()
     if not ad_request:
-        return jsonify({'error': 'AdRequest not found'}), 404
+        session.rollback()
+        return json_error(404, 'AdRequest not found')
 
     if ad_request.status != 'active':
-        return ('', 410)
+        session.rollback()
+        return json_error(410, 'AdRequest inactive')
 
     if ad_request.impression_tracked_at is not None:
+        session.rollback()
         return ('', 204)
 
-    begin_transaction = session.begin_nested if session.in_transaction() else session.begin
-
-    with begin_transaction():
+    try:
         locked_request = (
             session.query(AdRequest)
             .filter(AdRequest.id == ad_request.id)
@@ -155,67 +247,24 @@ def track_impression():
         )
 
         if locked_request.status != 'active':
-            return ('', 410)
+            session.rollback()
+            return json_error(410, 'AdRequest inactive')
 
         if locked_request.impression_tracked_at is not None:
+            session.rollback()
             return ('', 204)
 
-        charge = locked_request.reserved_impression_micro
+        success, error_response = _record_impression_event(session, locked_request)
+        if not success:
+            session.commit()
+            return error_response
 
-        advertiser_wallet = (
-            session.query(Wallet)
-            .filter(Wallet.user_id == locked_request.advertiser_id)
-            .with_for_update()
-            .one_or_none()
-        )
-        publisher_wallet = (
-            session.query(Wallet)
-            .filter(Wallet.user_id == locked_request.publisher_id)
-            .with_for_update()
-            .one_or_none()
-        )
+        session.commit()
+        return ('', 204)
 
-        insufficient_funds = (
-            not advertiser_wallet
-            or not publisher_wallet
-            or advertiser_wallet.reserved_micro < charge
-            or advertiser_wallet.balance_micro < charge
-        )
-
-        if insufficient_funds:
-            locked_request.status = 'expired'
-            return ('', 409)
-
-        advertiser_wallet.reserved_micro -= charge
-        advertiser_wallet.balance_micro -= charge
-        publisher_wallet.balance_micro += charge
-
-        spend_entry = LedgerEntry(
-            user_id=locked_request.advertiser_id,
-            entry_type='spend',
-            amount_micro=charge,
-            ref_type='impression',
-            ref_id=locked_request.id,
-        )
-        earn_entry = LedgerEntry(
-            user_id=locked_request.publisher_id,
-            entry_type='earn',
-            amount_micro=charge,
-            ref_type='impression',
-            ref_id=locked_request.id,
-        )
-
-        session.add_all([spend_entry, earn_entry])
-
-        impression = Impression(
-            ad_request_id=locked_request.id,
-            price_micro=charge,
-        )
-        session.add(impression)
-
-        locked_request.impression_tracked_at = datetime.utcnow()
-
-    return ('', 204)
+    except Exception:
+        session.rollback()
+        raise
 
 
 @adserver_bp.route('/track/click', methods=['GET'])
@@ -224,27 +273,29 @@ def track_click():
     if not request_id:
         return jsonify({'error': 'request_id is required'}), 400
 
-    session = db.session()
+    session = db.session
 
     ad_request = session.query(AdRequest).filter_by(request_id=request_id).one_or_none()
     if not ad_request:
-        return jsonify({'error': 'AdRequest not found'}), 404
+        session.rollback()
+        return json_error(404, 'AdRequest not found')
 
     if ad_request.status != 'active':
-        return ('', 410)
+        session.rollback()
+        return json_error(410, 'AdRequest inactive')
 
     ad = session.query(Ad).filter_by(id=ad_request.ad_id).one_or_none()
     if not ad:
-        return jsonify({'error': 'Ad not found'}), 404
+        session.rollback()
+        return json_error(404, 'Ad not found')
 
     landing_url = ad.landing_url
 
     if ad_request.click_tracked_at is not None:
+        session.rollback()
         return make_response('', 302, {'Location': landing_url})
 
-    begin_transaction = session.begin_nested if session.in_transaction() else session.begin
-
-    with begin_transaction():
+    try:
         locked_request = (
             session.query(AdRequest)
             .filter(AdRequest.id == ad_request.id)
@@ -253,36 +304,30 @@ def track_click():
         )
 
         if locked_request.status != 'active':
-            return ('', 410)
+            session.rollback()
+            return json_error(410, 'AdRequest inactive')
 
         if locked_request.click_tracked_at is not None:
+            session.rollback()
             return make_response('', 302, {'Location': landing_url})
 
         charge = locked_request.reserved_click_micro
 
-        advertiser_wallet = (
-            session.query(Wallet)
-            .filter(Wallet.user_id == locked_request.advertiser_id)
-            .with_for_update()
-            .one_or_none()
+        advertiser_wallet = _get_locked_wallet(
+            session,
+            locked_request.advertiser_id,
+            create=False,
         )
-        publisher_wallet = (
-            session.query(Wallet)
-            .filter(Wallet.user_id == locked_request.publisher_id)
-            .with_for_update()
-            .one_or_none()
+        publisher_wallet = _get_locked_wallet(
+            session,
+            locked_request.publisher_id,
+            create=True,
         )
 
-        insufficient_funds = (
-            not advertiser_wallet
-            or not publisher_wallet
-            or advertiser_wallet.reserved_micro < charge
-            or advertiser_wallet.balance_micro < charge
-        )
-
-        if insufficient_funds:
+        if not advertiser_wallet or not _ensure_wallet_has_charge(advertiser_wallet, charge):
             locked_request.status = 'expired'
-            return ('', 409)
+            session.commit()
+            return json_error(409, 'Reservation expired')
 
         advertiser_wallet.reserved_micro -= charge
         advertiser_wallet.balance_micro -= charge
@@ -312,6 +357,12 @@ def track_click():
         session.add(click)
 
         locked_request.click_tracked_at = datetime.utcnow()
+
+        session.commit()
+
+    except Exception:
+        session.rollback()
+        raise
 
     response = make_response('', 302)
     response.headers['Location'] = landing_url

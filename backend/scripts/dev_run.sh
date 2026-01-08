@@ -6,15 +6,21 @@ BACKEND_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 cd "$BACKEND_DIR"
 
-mkdir -p "$BACKEND_DIR/instance"
-DB_PATH="$BACKEND_DIR/instance/campaign_master.db"
 export FLASK_APP=run.py
-export DATABASE_URL="sqlite:////${DB_PATH}"
+
+if [[ -z "${DATABASE_URL:-}" ]]; then
+  mkdir -p "$BACKEND_DIR/instance"
+  DB_PATH="$BACKEND_DIR/instance/campaign_master.db"
+  export DATABASE_URL="sqlite:////${DB_PATH}"
+  echo "Using default SQLite database at ${DB_PATH}"
+else
+  echo "Using provided DATABASE_URL=${DATABASE_URL}"
+fi
 
 echo "CWD=$(pwd)"
-echo "DB_PATH=${DB_PATH}"
-echo "DATABASE_URL=${DATABASE_URL}"
-ls -la "$BACKEND_DIR/instance"
+if [[ -d "$BACKEND_DIR/instance" ]]; then
+  ls -la "$BACKEND_DIR/instance"
+fi
 
 flask db upgrade
 flask run --port 5001

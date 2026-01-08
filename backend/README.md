@@ -155,6 +155,65 @@ In another terminal you can run the verification flow against the dev server:
 BASE_URL=http://localhost:5001 ./backend/scripts/verify_flow.sh
 ```
 
+### Postgres workflows
+
+**Tests (Postgres default)**
+```bash
+cd backend
+make test          # PG_PORT=55432 make test  (if 5432 is busy)
+```
+
+**Tests (SQLite)**
+```bash
+cd backend
+make test-sqlite
+```
+
+**Dev server on Postgres**
+```bash
+cd backend
+make dev-up
+PG_PORT=55432 make dev-run-pg   # omit PG_PORT to use 5432
+```
+
+**Manual flows (Postgres dev server must already be running)**
+```bash
+cd backend
+make flows-dev
+```
+
+### Postgres development database
+
+If you prefer Postgres locally:
+
+```bash
+cd backend
+docker compose up -d db
+export DATABASE_URL="postgresql+psycopg://cm:cm@localhost:5432/campaign_master"
+./scripts/dev_reset_db.sh
+./scripts/dev_run.sh
+```
+
+> The compose file maps host port `${PG_PORT:-5432}` to the container. Override `PG_PORT` if you already have something bound to 5432.
+
+### Postgres test database
+
+Run the test suite against a dedicated Postgres database:
+
+```bash
+cd backend
+./scripts/test_pg.sh
+```
+
 ## Docker
 
 See `../infra/docker-compose.yml` for running with Docker Compose.
+
+## Swagger UI checklist
+
+The docs live at `http://localhost:5001/docs` (served by `/openapi.yaml`). Use the “Try it out” buttons to run requests with the existing browser session.
+
+1. **Register + Login:** `POST /api/auth/register` then `POST /api/auth/login`. Verify the response contains `Set-Cookie: session=...`.
+2. **Session check:** `GET /api/auth/me` should return 200 with your email.
+3. **Permissions:** While logged in as a publisher, `GET /api/reports/advertiser` returns 403. As an advertiser, `GET /api/reports/publisher` returns 403. Without a session, both endpoints return 401.
+4. **Logout:** `POST /api/auth/logout` clears the session; subsequent `GET /api/auth/me` returns 401.

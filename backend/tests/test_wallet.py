@@ -1,3 +1,4 @@
+import os
 import pytest
 from app import create_app, db
 from app.models import User, Wallet, LedgerEntry
@@ -7,15 +8,19 @@ from app.wallet_helpers import topup_balance, get_or_create_wallet
 @pytest.fixture
 def app():
     """Create application for testing."""
-    app = create_app()
-    app.config['TESTING'] = True
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
-    app.config['SECRET_KEY'] = 'test-secret-key'
-    app.config['WTF_CSRF_ENABLED'] = False
-    
+    db_url = os.getenv('DATABASE_URL', 'sqlite:///:memory:')
+    if not db_url:
+        db_url = 'sqlite:///:memory:'
+    app = create_app({
+        'TESTING': True,
+        'SQLALCHEMY_DATABASE_URI': db_url,
+        'SECRET_KEY': 'test-secret-key',
+        'WTF_CSRF_ENABLED': False,
+    })
     with app.app_context():
         db.create_all()
         yield app
+        db.session.remove()
         db.drop_all()
 
 

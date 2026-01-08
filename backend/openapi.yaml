@@ -56,6 +56,8 @@ paths:
   /api/auth/me:
     get:
       summary: Current session user
+      security:
+        - cookieAuth: []
       responses:
         '200':
           description: Authenticated user
@@ -68,6 +70,8 @@ paths:
   /api/auth/logout:
     post:
       summary: Logout user
+      security:
+        - cookieAuth: []
       responses:
         '200':
           description: Logged out
@@ -80,6 +84,8 @@ paths:
   /api/wallet:
     get:
       summary: Get wallet
+      security:
+        - cookieAuth: []
       responses:
         '200':
           description: Wallet payload
@@ -93,15 +99,15 @@ paths:
     post:
       summary: Top up wallet (advertisers only)
       requestBody:
-        required: false
+        required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                amount_micro:
-                  type: integer
-                  description: Amount in micro units.
+              $ref: '#/components/schemas/TopupRequest'
+            example:
+              amount_micro: 2000000
+      security:
+        - cookieAuth: []
       responses:
         '200':
           description: Updated wallet
@@ -118,6 +124,19 @@ paths:
   /api/advertiser/campaigns:
     post:
       summary: Create campaign
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CampaignCreateRequest'
+            example:
+              name: Summer Push
+              status: active
+              bid_cpm_micro: 1200000
+              bid_cpc_micro: 800000
       responses:
         '201':
           description: Created
@@ -131,6 +150,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
     get:
       summary: List campaigns
+      security:
+        - cookieAuth: []
       responses:
         '200':
           description: List of campaigns
@@ -150,6 +171,8 @@ paths:
       summary: Update campaign status
       parameters:
         - $ref: '#/components/parameters/CampaignId'
+      security:
+        - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -175,6 +198,19 @@ paths:
       summary: Create ad
       parameters:
         - $ref: '#/components/parameters/CampaignId'
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdCreateRequest'
+            example:
+              title: Leaderboard Banner
+              image_url: https://via.placeholder.com/300x250.png
+              landing_url: https://example.com/landing
+              status: active
       responses:
         '201':
           description: Created
@@ -194,6 +230,8 @@ paths:
       summary: List ads
       parameters:
         - $ref: '#/components/parameters/CampaignId'
+      security:
+        - cookieAuth: []
       responses:
         '200':
           description: Ads list
@@ -221,6 +259,8 @@ paths:
           required: true
           schema:
             type: integer
+      security:
+        - cookieAuth: []
       responses:
         '200':
           $ref: '#/components/responses/MessageOnly'
@@ -235,6 +275,17 @@ paths:
   /api/publisher/sites:
     post:
       summary: Create site
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SiteCreateRequest'
+            example:
+              name: News Hub
+              domain: news.example.com
       responses:
         '201':
           description: Created
@@ -248,6 +299,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
     get:
       summary: List sites
+      security:
+        - cookieAuth: []
       responses:
         '200':
           description: Sites list
@@ -267,6 +320,8 @@ paths:
       summary: Update site
       parameters:
         - $ref: '#/components/parameters/SiteId'
+      security:
+        - cookieAuth: []
       responses:
         '200':
           $ref: '#/components/responses/MessageOnly'
@@ -283,6 +338,21 @@ paths:
       summary: Create slot
       parameters:
         - $ref: '#/components/parameters/SiteId'
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SlotCreateRequest'
+            example:
+              name: Above Fold
+              width: 300
+              height: 250
+              floor_cpm_micro: 900000
+              floor_cpc_micro: 600000
+              status: active
       responses:
         '201':
           description: Created
@@ -302,6 +372,8 @@ paths:
       summary: List slots
       parameters:
         - $ref: '#/components/parameters/SiteId'
+      security:
+        - cookieAuth: []
       responses:
         '200':
           description: Slots list
@@ -329,6 +401,8 @@ paths:
           required: true
           schema:
             type: integer
+      security:
+        - cookieAuth: []
       responses:
         '200':
           $ref: '#/components/responses/MessageOnly'
@@ -343,6 +417,8 @@ paths:
   /api/reports/advertiser:
     get:
       summary: Advertiser totals
+      security:
+        - cookieAuth: []
       responses:
         '200':
           description: Totals
@@ -357,6 +433,8 @@ paths:
   /api/reports/publisher:
     get:
       summary: Publisher totals
+      security:
+        - cookieAuth: []
       responses:
         '200':
           description: Totals
@@ -403,7 +481,13 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
-          description: Reservation expired
+          description: Reservation expired or unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '410':
+          description: Ad request inactive
           content:
             application/json:
               schema:
@@ -427,12 +511,23 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
-          description: Reservation expired
+          description: Reservation not usable (e.g., impression missing)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '410':
+          description: Ad request inactive
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: session
   parameters:
     CampaignId:
       name: campaign_id
@@ -499,6 +594,13 @@ components:
           type: string
         wallet:
           $ref: '#/components/schemas/Wallet'
+    TopupRequest:
+      type: object
+      required: [amount_micro]
+      properties:
+        amount_micro:
+          type: integer
+          description: Amount to reserve in micro credits. Defaults to 1,000,000 if omitted.
     WalletResponse:
       type: object
       properties:
@@ -525,6 +627,19 @@ components:
           $ref: '#/components/schemas/Campaign'
         message:
           type: string
+    CampaignCreateRequest:
+      type: object
+      required: [name, bid_cpm_micro, bid_cpc_micro]
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+          description: One of draft/active/paused/archived.
+        bid_cpm_micro:
+          type: integer
+        bid_cpc_micro:
+          type: integer
     Campaign:
       type: object
       properties:
@@ -550,6 +665,20 @@ components:
           $ref: '#/components/schemas/Ad'
         message:
           type: string
+    AdCreateRequest:
+      type: object
+      required: [title, image_url, landing_url]
+      properties:
+        title:
+          type: string
+        image_url:
+          type: string
+          format: uri
+        landing_url:
+          type: string
+          format: uri
+        status:
+          type: string
     Ad:
       type: object
       properties:
@@ -574,6 +703,14 @@ components:
           $ref: '#/components/schemas/Site'
         message:
           type: string
+    SiteCreateRequest:
+      type: object
+      required: [name, domain]
+      properties:
+        name:
+          type: string
+        domain:
+          type: string
     Site:
       type: object
       properties:
@@ -593,6 +730,22 @@ components:
         slot:
           $ref: '#/components/schemas/Slot'
         message:
+          type: string
+    SlotCreateRequest:
+      type: object
+      required: [name, width, height]
+      properties:
+        name:
+          type: string
+        width:
+          type: integer
+        height:
+          type: integer
+        floor_cpm_micro:
+          type: integer
+        floor_cpc_micro:
+          type: integer
+        status:
           type: string
     Slot:
       type: object

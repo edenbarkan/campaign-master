@@ -2,7 +2,9 @@
 set -euo pipefail
 
 BASE_URL="${BASE_URL:-http://localhost:5001}"
-ENV_FILE="backend/tmp/last_users.env"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BACKEND_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+ENV_FILE="${BACKEND_DIR}/tmp/last_users.env"
 [[ -f "$ENV_FILE" ]] || { echo "[smoke_reports][error] missing $ENV_FILE. Run verify_flow.sh first." >&2; exit 1; }
 # shellcheck disable=SC1090
 source "$ENV_FILE"

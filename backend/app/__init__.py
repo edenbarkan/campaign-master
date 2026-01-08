@@ -20,7 +20,7 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 
-def create_app():
+def create_app(config_overrides=None):
     """Application factory pattern."""
     app = Flask(__name__)
     
@@ -33,7 +33,6 @@ def create_app():
     default_db_uri = f"sqlite:///{default_db_path}"
     raw_database_url = os.getenv('DATABASE_URL')
     resolved_db_uri = _resolve_database_uri(raw_database_url, instance_dir, default_db_uri)
-    # Configuration
     app.config['SQLALCHEMY_DATABASE_URI'] = resolved_db_uri
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     secret_key = os.getenv('SECRET_KEY')
@@ -41,8 +40,13 @@ def create_app():
         secret_key = 'dev-secret-key-change-in-production'
         app.logger.warning('SECRET_KEY not provided; using development fallback. Do not use in production.')
     app.config['SECRET_KEY'] = secret_key
-    app.logger.info('DATABASE_URL resolved to %s', resolved_db_uri)
-    _log_database_path(app, resolved_db_uri)
+
+    if config_overrides:
+        app.config.update(config_overrides)
+
+    active_db_uri = app.config['SQLALCHEMY_DATABASE_URI']
+    app.logger.info('DATABASE_URL resolved to %s', active_db_uri)
+    _log_database_path(app, active_db_uri)
     
     # Initialize extensions
     db.init_app(app)
@@ -62,6 +66,7 @@ def create_app():
     from app.advertiser import advertiser_bp
     from app.publisher import publisher_bp
     from app.adserver import adserver_bp
+    from app.docs import docs_bp
     app.register_blueprint(health_bp)
     app.register_blueprint(reports_bp)
     app.register_blueprint(auth_bp)
@@ -69,6 +74,7 @@ def create_app():
     app.register_blueprint(advertiser_bp)
     app.register_blueprint(publisher_bp)
     app.register_blueprint(adserver_bp)
+    app.register_blueprint(docs_bp)
     
     register_error_handlers(app)
     
