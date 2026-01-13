@@ -1,0 +1,305 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap");
+
+:root {
+  font-family: "Space Grotesk", "Segoe UI", sans-serif;
+  color: #141414;
+  background-color: #f8f4ee;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+}
+
+.page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  background: radial-gradient(circle at top, #f8f4ee 0%, #e6efe7 45%, #dfe8f6 100%);
+}
+
+.page.auth {
+  align-items: stretch;
+}
+
+.auth-card {
+  margin: auto;
+  background: #ffffff;
+  padding: 36px 40px;
+  border-radius: 24px;
+  box-shadow: 0 25px 50px rgba(20, 20, 20, 0.12);
+  max-width: 480px;
+  width: 100%;
+}
+
+.eyebrow {
+  font-family: "IBM Plex Mono", monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 12px;
+  color: #5f6368;
+  margin: 0 0 8px;
+}
+
+h1 {
+  margin: 0 0 8px;
+  font-size: 30px;
+}
+
+.subhead {
+  margin: 0 0 24px;
+  color: #4a4a4a;
+}
+
+.form {
+  display: grid;
+  gap: 16px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+}
+
+input,
+select,
+textarea {
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 15px;
+  font-family: inherit;
+  background: #fdfdfd;
+}
+
+textarea {
+  resize: vertical;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.button {
+  border: none;
+  border-radius: 999px;
+  padding: 12px 18px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.button.primary {
+  background: #0f766e;
+  color: #ffffff;
+}
+
+.button.ghost {
+  background: transparent;
+  border: 1px solid #d1d5db;
+  color: #1f2937;
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.muted {
+  margin-top: 18px;
+  color: #6b7280;
+}
+
+.error {
+  color: #b91c1c;
+  margin: 0;
+}
+
+.loading {
+  font-size: 16px;
+  color: #4b5563;
+}
+
+.dashboard {
+  align-items: flex-start;
+}
+
+.panel {
+  width: min(900px, 100%);
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 28px 32px;
+  box-shadow: 0 24px 50px rgba(15, 23, 42, 0.08);
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.panel-body {
+  margin-top: 16px;
+}
+
+.lead {
+  font-size: 18px;
+  color: #374151;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.card {
+  background: #fdfcfb;
+  border-radius: 20px;
+  padding: 22px 24px;
+  border: 1px solid #ececec;
+}
+
+.card h2 {
+  margin: 0 0 16px;
+  font-size: 20px;
+}
+
+.subnav {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.subnav a {
+  text-decoration: none;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  font-size: 13px;
+  color: #1f2937;
+}
+
+.subnav a.active {
+  background: #0f766e;
+  color: #ffffff;
+  border-color: #0f766e;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+  margin: 24px 0;
+}
+
+.metric-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  padding: 16px 18px;
+}
+
+.metric-card p {
+  margin: 0 0 6px;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.metric-card h3 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.charts {
+  margin-bottom: 24px;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.table {
+  display: grid;
+  gap: 12px;
+}
+
+.table-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid #ececec;
+}
+
+.row-title {
+  margin: 0 0 4px;
+  font-weight: 600;
+}
+
+.row-metrics {
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+  color: #4b5563;
+  text-align: right;
+}
+
+.ad-preview {
+  display: grid;
+  gap: 12px;
+}
+
+.ad-preview img {
+  width: 100%;
+  border-radius: 16px;
+  object-fit: cover;
+  border: 1px solid #ececec;
+}
+
+.ad-preview h3 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.ad-preview p {
+  margin: 0;
+  color: #4b5563;
+}
+
+.snippet {
+  display: grid;
+  gap: 6px;
+}
+
+.snippet textarea {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+}
