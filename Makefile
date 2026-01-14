@@ -13,5 +13,8 @@ seed:
 test:
 	docker compose exec -T backend pytest -q
 
+smoke:
+	bash scripts/smoke_demo.sh
+
 logs:
 	docker compose logs -f --tail=100

@@ -16,16 +16,23 @@ import { apiFetch } from "../lib/api";
 const PartnerDashboardPage = () => {
   const { token } = useAuth();
   const [data, setData] = useState(null);
+  const [quality, setQuality] = useState(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (!token) return;
-    apiFetch("/partner/analytics/summary", { token })
-      .then(setData)
+    Promise.all([
+      apiFetch("/partner/analytics/summary", { token }),
+      apiFetch("/partner/quality/summary", { token })
+    ])
+      .then(([summaryResponse, qualityResponse]) => {
+        setData(summaryResponse);
+        setQuality(qualityResponse);
+      })
       .catch(() => setError("Unable to load partner analytics."));
   }, [token]);
 
-  if (!data) {
+  if (!data || !quality) {
     return (
       <main className="page dashboard">
         <section className="panel">
@@ -38,6 +45,8 @@ const PartnerDashboardPage = () => {
   }
 
   const { daily, totals, campaigns } = data;
+  const ctr = (quality.ctr || 0) * 100;
+  const rejectionRate = (quality.rejection_rate || 0) * 100;
 
   return (
     <main className="page dashboard">
@@ -59,6 +68,14 @@ const PartnerDashboardPage = () => {
           <div className="metric-card">
             <p>Impressions</p>
             <h3>{totals.impressions}</h3>
+          </div>
+          <div className="metric-card">
+            <p>CTR</p>
+            <h3>{ctr.toFixed(2)}%</h3>
+          </div>
+          <div className="metric-card">
+            <p>Rejection rate</p>
+            <h3>{rejectionRate.toFixed(2)}%</h3>
           </div>
         </div>
         <div className="grid charts">

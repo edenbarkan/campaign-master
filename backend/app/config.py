@@ -11,6 +11,12 @@ class Config:
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     PLATFORM_FEE_PERCENT = os.getenv("PLATFORM_FEE_PERCENT", "30")
+    CLICK_HASH_SALT = os.getenv("CLICK_HASH_SALT", "devsalt")
+    CLICK_DUPLICATE_WINDOW_SECONDS = int(os.getenv("CLICK_DUPLICATE_WINDOW_SECONDS", "10"))
+    CLICK_RATE_LIMIT_PER_MINUTE = int(os.getenv("CLICK_RATE_LIMIT_PER_MINUTE", "20"))
+    IMPRESSION_DEDUP_WINDOW_SECONDS = int(
+        os.getenv("IMPRESSION_DEDUP_WINDOW_SECONDS", "60")
+    )
 
 
 def load_platform_fee_percent(value):

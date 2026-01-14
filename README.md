@@ -36,6 +36,10 @@ Demo URLs:
 
 Key environment variables (see `.env.example`):
 - `PLATFORM_FEE_PERCENT`: platform fee used to compute partner payout (default 30).
+- `CLICK_HASH_SALT`: salt for hashing IP/user agent fingerprints.
+- `CLICK_DUPLICATE_WINDOW_SECONDS`: duplicate click rejection window (default 10).
+- `CLICK_RATE_LIMIT_PER_MINUTE`: per-IP click rate limit (default 20/min).
+- `IMPRESSION_DEDUP_WINDOW_SECONDS`: impression dedup window (default 60).
 
 Health check:
 
@@ -61,6 +65,28 @@ Demo accounts:
 Manual QA:
 - Admin login should land on `/admin/dashboard`.
 - Visiting `/partner/dashboard` as admin should redirect to `/admin/dashboard`.
+- Double-clicking the same tracking URL within 10 seconds should show up as a rejected click in admin risk analytics.
+
+## Smoke demo
+
+```bash
+make smoke
+```
+
+Optional flags:
+- `SMOKE_SKIP_DEMO=1` skip running `make demo` inside the smoke script.
+- `BASE_URL=http://localhost:8081` override the base URL.
+
+The smoke script validates spend/earnings deltas and rejects a duplicate click.
+
+## Click validation and rejection reasons
+
+The click validator records every click with an ACCEPTED or REJECTED status. Rejections are stored with a reason:
+- `DUPLICATE_CLICK` repeated click from the same IP within the duplicate window.
+- `RATE_LIMIT` too many clicks from the same IP per minute.
+- `BUDGET_EXHAUSTED` campaign cannot cover the max CPC and is paused.
+- `INVALID_ASSIGNMENT` missing or invalid assignment code.
+- `BOT_SUSPECTED` empty user-agent string.
 
 ## Reset
 

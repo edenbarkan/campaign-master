@@ -11,9 +11,11 @@ from app.extensions import db
 from app.models.ad import Ad
 from app.models.assignment import AdAssignment
 from app.models.campaign import Campaign
-from app.models.tracking_event import TrackingEvent
+from app.models.click_event import ClickEvent
+from app.models.impression_event import ImpressionEvent
 from app.models.user import User
 from app.services.pricing import compute_partner_payout
+from app.services.validation import hash_value
 
 
 def get_or_create_user(email, role, password):
@@ -67,7 +69,7 @@ def get_or_create_ad(campaign_id, title, body, image_url, destination_url):
 
 def seed_events(campaign, ad, partner):
     existing = (
-        TrackingEvent.query.filter_by(campaign_id=campaign.id, partner_id=partner.id).count()
+        ClickEvent.query.filter_by(campaign_id=campaign.id, partner_id=partner.id).count()
     )
     if existing > 0:
         return
@@ -86,32 +88,54 @@ def seed_events(campaign, ad, partner):
     db.session.commit()
 
     spend = Decimal("0.00")
+    ip_hash = hash_value("127.0.0.1")
+    ua_hash = hash_value("seed-agent")
 
     for offset in range(7):
         day = datetime.utcnow() - timedelta(days=offset)
         for _ in range(30 - offset * 2):
             db.session.add(
-                TrackingEvent(
-                    assignment_id=assignment.id,
+                ImpressionEvent(
+                    assignment_code=assignment.code,
                     campaign_id=campaign.id,
                     ad_id=ad.id,
                     partner_id=partner.id,
-                    event_type="impression",
-                    created_at=day,
+                    ip_hash=ip_hash,
+                    status="ACCEPTED",
+                    ts=day,
                 )
             )
         for _ in range(6 - offset // 2):
             db.session.add(
-                TrackingEvent(
-                    assignment_id=assignment.id,
+                ClickEvent(
+                    assignment_code=assignment.code,
                     campaign_id=campaign.id,
                     ad_id=ad.id,
                     partner_id=partner.id,
-                    event_type="click",
-                    created_at=day,
+                    ip_hash=ip_hash,
+                    ua_hash=ua_hash,
+                    status="ACCEPTED",
+                    spend_delta=campaign.buyer_cpc,
+                    earnings_delta=campaign.partner_payout,
+                    profit_delta=campaign.buyer_cpc - campaign.partner_payout,
+                    ts=day,
                 )
             )
             spend += campaign.buyer_cpc
+
+    db.session.add(
+        ClickEvent(
+            assignment_code=assignment.code,
+            campaign_id=campaign.id,
+            ad_id=ad.id,
+            partner_id=partner.id,
+            ip_hash=ip_hash,
+            ua_hash=ua_hash,
+            status="REJECTED",
+            reject_reason="DUPLICATE_CLICK",
+            ts=datetime.utcnow(),
+        )
+    )
 
     campaign.budget_spent = spend
     db.session.commit()

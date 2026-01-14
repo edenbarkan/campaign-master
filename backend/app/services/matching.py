@@ -6,7 +6,8 @@ from app.extensions import db
 from app.models.ad import Ad
 from app.models.assignment import AdAssignment
 from app.models.campaign import Campaign
-from app.models.tracking_event import TrackingEvent
+from app.models.click_event import ClickEvent
+from app.models.impression_event import ImpressionEvent
 
 DEFAULT_CTR = 0.01
 
@@ -19,16 +20,16 @@ def _ctr(clicks, impressions):
 
 def _campaign_ctr(campaign_id):
     clicks = (
-        db.session.query(func.count(TrackingEvent.id))
-        .filter(TrackingEvent.campaign_id == campaign_id)
-        .filter(TrackingEvent.event_type == "click")
+        db.session.query(func.count(ClickEvent.id))
+        .filter(ClickEvent.campaign_id == campaign_id)
+        .filter(ClickEvent.status == "ACCEPTED")
         .scalar()
         or 0
     )
     impressions = (
-        db.session.query(func.count(TrackingEvent.id))
-        .filter(TrackingEvent.campaign_id == campaign_id)
-        .filter(TrackingEvent.event_type == "impression")
+        db.session.query(func.count(ImpressionEvent.id))
+        .filter(ImpressionEvent.campaign_id == campaign_id)
+        .filter(ImpressionEvent.status == "ACCEPTED")
         .scalar()
         or 0
     )
@@ -37,18 +38,18 @@ def _campaign_ctr(campaign_id):
 
 def _partner_ctr(campaign_id, partner_id):
     clicks = (
-        db.session.query(func.count(TrackingEvent.id))
-        .filter(TrackingEvent.campaign_id == campaign_id)
-        .filter(TrackingEvent.partner_id == partner_id)
-        .filter(TrackingEvent.event_type == "click")
+        db.session.query(func.count(ClickEvent.id))
+        .filter(ClickEvent.campaign_id == campaign_id)
+        .filter(ClickEvent.partner_id == partner_id)
+        .filter(ClickEvent.status == "ACCEPTED")
         .scalar()
         or 0
     )
     impressions = (
-        db.session.query(func.count(TrackingEvent.id))
-        .filter(TrackingEvent.campaign_id == campaign_id)
-        .filter(TrackingEvent.partner_id == partner_id)
-        .filter(TrackingEvent.event_type == "impression")
+        db.session.query(func.count(ImpressionEvent.id))
+        .filter(ImpressionEvent.campaign_id == campaign_id)
+        .filter(ImpressionEvent.partner_id == partner_id)
+        .filter(ImpressionEvent.status == "ACCEPTED")
         .scalar()
         or 0
     )
@@ -60,7 +61,7 @@ def select_ad_for_partner(partner_id, category=None, geo=None, device=None, plac
 
     campaigns = (
         Campaign.query.filter(Campaign.status == "active")
-        .filter(Campaign.budget_spent < Campaign.budget_total)
+        .filter(Campaign.budget_spent + Campaign.buyer_cpc <= Campaign.budget_total)
         .filter(or_(Campaign.start_date.is_(None), Campaign.start_date <= today))
         .filter(or_(Campaign.end_date.is_(None), Campaign.end_date >= today))
     )

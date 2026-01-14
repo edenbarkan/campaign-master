@@ -1,8 +1,13 @@
+from datetime import date, timedelta
+
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import get_jwt_identity
 
 from app.auth.decorators import roles_required
 from app.services.analytics import (
+    admin_risk_series,
+    admin_risk_summary,
+    admin_risk_top_partners,
     admin_daily_metrics,
     admin_top_campaigns,
     admin_top_partners,
@@ -10,6 +15,7 @@ from app.services.analytics import (
     buyer_daily_metrics,
     partner_campaign_table,
     partner_daily_metrics,
+    partner_quality_summary,
 )
 
 analytics_bp = Blueprint("analytics", __name__)
@@ -75,6 +81,17 @@ def partner_summary():
     )
 
 
+@analytics_bp.route("/api/partner/quality/summary", methods=["GET"])
+@roles_required("partner")
+def partner_quality():
+    try:
+        partner_id = int(get_jwt_identity())
+    except (TypeError, ValueError):
+        return jsonify({"error": "invalid_identity"}), 401
+
+    return jsonify(partner_quality_summary(partner_id))
+
+
 @analytics_bp.route("/api/admin/analytics/summary", methods=["GET"])
 @roles_required("admin")
 def admin_summary():
@@ -110,3 +127,51 @@ def admin_series():
         return jsonify({"error": "invalid_days"}), 400
 
     return jsonify({"daily": admin_daily_metrics(days=days)})
+
+
+@analytics_bp.route("/api/admin/risk/summary", methods=["GET"])
+@roles_required("admin")
+def admin_risk_summary_view():
+    return jsonify(admin_risk_summary())
+
+
+@analytics_bp.route("/api/admin/risk/series", methods=["GET"])
+@roles_required("admin")
+def admin_risk_series_view():
+    from_value = request.args.get("from")
+    to_value = request.args.get("to")
+    group_by = (request.args.get("groupBy") or "day").lower()
+    if group_by != "day":
+        return jsonify({"error": "invalid_group_by"}), 400
+
+    if from_value:
+        try:
+            start_date = date.fromisoformat(from_value)
+        except (TypeError, ValueError):
+            return jsonify({"error": "invalid_from"}), 400
+    else:
+        start_date = date.today() - timedelta(days=13)
+
+    if to_value:
+        try:
+            end_date = date.fromisoformat(to_value)
+        except (TypeError, ValueError):
+            return jsonify({"error": "invalid_to"}), 400
+    else:
+        end_date = date.today()
+
+    if end_date < start_date:
+        return jsonify({"error": "invalid_range"}), 400
+
+    return jsonify({"daily": admin_risk_series(start_date, end_date)})
+
+
+@analytics_bp.route("/api/admin/risk/top-partners", methods=["GET"])
+@roles_required("admin")
+def admin_risk_top_partners_view():
+    limit = request.args.get("limit", 5)
+    try:
+        limit = max(1, min(int(limit), 50))
+    except (TypeError, ValueError):
+        return jsonify({"error": "invalid_limit"}), 400
+    return jsonify({"partners": admin_risk_top_partners(limit=limit)})

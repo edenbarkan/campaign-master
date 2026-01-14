@@ -18,10 +18,15 @@ def generate_code():
             return code
 
 
-def ad_payload(ad, assignment):
+def ad_payload(ad, campaign, assignment):
     return {
         "assignment_code": assignment.code,
         "tracking_url": f"/t/{assignment.code}",
+        "campaign": {
+            "id": campaign.id,
+            "max_cpc": float(campaign.max_cpc),
+            "partner_payout": float(campaign.partner_payout),
+        },
         "ad": {
             "id": ad.id,
             "title": ad.title,
@@ -64,4 +69,4 @@ def request_ad():
     db.session.add(assignment)
     db.session.commit()
 
-    return jsonify(ad_payload(ad, assignment))
+    return jsonify(ad_payload(ad, campaign, assignment))
