@@ -18,7 +18,13 @@ const LoginPage = () => {
 
     try {
       const user = await login(email, password);
-      navigate(user.role === "buyer" ? "/buyer" : "/partner");
+      if (user.role === "BUYER") {
+        navigate("/buyer/dashboard");
+      } else if (user.role === "PARTNER") {
+        navigate("/partner/dashboard");
+      } else {
+        navigate("/admin/dashboard");
+      }
     } catch (err) {
       setError("Unable to sign in. Check your details and try again.");
     } finally {

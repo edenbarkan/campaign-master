@@ -5,12 +5,22 @@ import BuyerHeader from "../components/BuyerHeader.jsx";
 import { useAuth } from "../contexts/AuthContext";
 import { apiFetch } from "../lib/api";
 
+const round2 = (value) => {
+  if (Number.isNaN(value)) return 0;
+  return Math.round((value + Number.EPSILON) * 100) / 100;
+};
+
+const computePayout = (maxCpc, feePercent) => {
+  const fee = Number(feePercent);
+  if (Number.isNaN(maxCpc) || Number.isNaN(fee)) return 0;
+  return round2(maxCpc * (1 - fee / 100));
+};
+
 const emptyForm = {
   name: "",
   status: "active",
   budget_total: "",
-  buyer_cpc: "",
-  partner_payout: "",
+  max_cpc: "",
   targeting_category: "",
   targeting_geo: "",
   start_date: "",
@@ -24,11 +34,22 @@ const BuyerHome = () => {
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [platformFeePercent, setPlatformFeePercent] = useState(30);
+  const computedPayout = computePayout(Number(form.max_cpc), platformFeePercent);
 
   const loadCampaigns = async () => {
     try {
       const payload = await apiFetch("/buyer/campaigns", { token });
       setCampaigns(payload.campaigns || []);
+      const metaFee = payload.meta?.platform_fee_percent;
+      if (typeof metaFee === "number") {
+        setPlatformFeePercent(metaFee);
+      } else if (payload.campaigns?.length) {
+        const fee = payload.campaigns[0]?.platform_fee_percent;
+        if (typeof fee === "number") {
+          setPlatformFeePercent(fee);
+        }
+      }
     } catch (err) {
       setError("Unable to load campaigns.");
     } finally {
@@ -50,16 +71,15 @@ const BuyerHome = () => {
     event.preventDefault();
     setError("");
 
-    const buyerCpc = Number(form.buyer_cpc);
-    const partnerPayout = Number(form.partner_payout);
+    const maxCpc = Number(form.max_cpc);
 
-    if (Number.isNaN(buyerCpc) || Number.isNaN(partnerPayout)) {
-      setError("Enter numeric pricing values.");
+    if (Number.isNaN(maxCpc)) {
+      setError("Enter a numeric max CPC.");
       return;
     }
 
-    if (buyerCpc < partnerPayout) {
-      setError("Partner payout cannot exceed buyer CPC.");
+    if (maxCpc <= 0) {
+      setError("Max CPC must be greater than zero.");
       return;
     }
 
@@ -67,8 +87,7 @@ const BuyerHome = () => {
       name: form.name,
       status: form.status,
       budget_total: Number(form.budget_total),
-      buyer_cpc: buyerCpc,
-      partner_payout: partnerPayout,
+      max_cpc: maxCpc,
       targeting: {
         category: form.targeting_category || null,
         geo: form.targeting_geo || null
@@ -79,17 +98,23 @@ const BuyerHome = () => {
 
     try {
       if (editingId) {
-        await apiFetch(`/buyer/campaigns/${editingId}`, {
+        const response = await apiFetch(`/buyer/campaigns/${editingId}`, {
           method: "PUT",
           body: payload,
           token
         });
+        if (typeof response.campaign?.platform_fee_percent === "number") {
+          setPlatformFeePercent(response.campaign.platform_fee_percent);
+        }
       } else {
-        await apiFetch("/buyer/campaigns", {
+        const response = await apiFetch("/buyer/campaigns", {
           method: "POST",
           body: payload,
           token
         });
+        if (typeof response.campaign?.platform_fee_percent === "number") {
+          setPlatformFeePercent(response.campaign.platform_fee_percent);
+        }
       }
       setForm(emptyForm);
       setEditingId(null);
@@ -105,13 +130,15 @@ const BuyerHome = () => {
       name: campaign.name,
       status: campaign.status,
       budget_total: campaign.budget_total,
-      buyer_cpc: campaign.buyer_cpc,
-      partner_payout: campaign.partner_payout,
+      max_cpc: campaign.max_cpc ?? campaign.buyer_cpc,
       targeting_category: campaign.targeting?.category || "",
       targeting_geo: campaign.targeting?.geo || "",
       start_date: campaign.start_date || "",
       end_date: campaign.end_date || ""
     });
+    if (typeof campaign.platform_fee_percent === "number") {
+      setPlatformFeePercent(campaign.platform_fee_percent);
+    }
   };
 
   const handleReset = () => {
@@ -162,30 +189,34 @@ const BuyerHome = () => {
                   />
                 </label>
                 <label className="field">
-                  <span>Buyer CPC</span>
+                  <span>Max CPC</span>
                   <input
-                    name="buyer_cpc"
+                    name="max_cpc"
                     type="number"
                     step="0.01"
-                    value={form.buyer_cpc}
+                    value={form.max_cpc}
                     onChange={handleChange}
                     placeholder="2.50"
                     required
                   />
                 </label>
               </div>
-              <label className="field">
-                <span>Partner payout (CPC)</span>
-                <input
-                  name="partner_payout"
-                  type="number"
-                  step="0.01"
-                  value={form.partner_payout}
-                  onChange={handleChange}
-                  placeholder="1.50"
-                  required
-                />
-              </label>
+              <div className="field-row">
+                <label className="field">
+                  <span>Platform fee</span>
+                  <input
+                    value={`${platformFeePercent}%`}
+                    readOnly
+                  />
+                </label>
+                <label className="field">
+                  <span>Partner payout (computed)</span>
+                  <input
+                    value={`$${computedPayout.toFixed(2)}`}
+                    readOnly
+                  />
+                </label>
+              </div>
               <div className="field-row">
                 <label className="field">
                   <span>Targeting category</span>
@@ -251,7 +282,8 @@ const BuyerHome = () => {
                   <div>
                     <p className="row-title">{campaign.name}</p>
                     <p className="muted">
-                      {campaign.status} · ${campaign.buyer_cpc.toFixed(2)} CPC
+                      {campaign.status} · $
+                      {(campaign.max_cpc ?? campaign.buyer_cpc).toFixed(2)} max CPC
                     </p>
                   </div>
                   <div className="row-metrics">

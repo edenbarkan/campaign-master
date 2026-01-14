@@ -1,3 +1,4 @@
+from datetime import datetime
 from decimal import Decimal
 
 from flask import Blueprint, jsonify, redirect, request
@@ -26,6 +27,7 @@ def track_impression():
         ad_id=assignment.ad_id,
         partner_id=assignment.partner_id,
         event_type="impression",
+        created_at=datetime.utcnow(),
     )
     db.session.add(event)
     db.session.commit()
@@ -49,6 +51,7 @@ def track_click(code):
         ad_id=assignment.ad_id,
         partner_id=assignment.partner_id,
         event_type="click",
+        created_at=datetime.utcnow(),
     )
     db.session.add(event)
     db.session.commit()

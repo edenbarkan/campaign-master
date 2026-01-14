@@ -86,6 +86,11 @@ textarea {
   resize: vertical;
 }
 
+.field input[readonly] {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
 .checkbox {
   display: flex;
   align-items: center;
@@ -257,6 +262,10 @@ textarea {
   border-radius: 16px;
   background: #ffffff;
   border: 1px solid #ececec;
+}
+
+.table-row.compact {
+  grid-template-columns: 1fr auto;
 }
 
 .row-title {

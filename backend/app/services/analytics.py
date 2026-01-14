@@ -11,7 +11,13 @@ from app.models.user import User
 def build_daily_series(rows, days):
     end_date = date.today()
     start_date = end_date - timedelta(days=days - 1)
-    row_map = {row.day: row for row in rows}
+    row_map = {}
+
+    for row in rows:
+        day_value = row.day
+        if isinstance(day_value, str):
+            day_value = date.fromisoformat(day_value)
+        row_map[day_value] = row
     series = []
 
     for offset in range(days):
@@ -22,6 +28,7 @@ def build_daily_series(rows, days):
                 "date": current_day.isoformat(),
                 "spend": float(getattr(row, "spend", 0) or 0),
                 "earnings": float(getattr(row, "earnings", 0) or 0),
+                "profit": float(getattr(row, "profit", 0) or 0),
                 "clicks": int(getattr(row, "clicks", 0) or 0),
                 "impressions": int(getattr(row, "impressions", 0) or 0),
             }
@@ -156,6 +163,101 @@ def partner_campaign_table(partner_id):
             "name": row.name,
             "clicks": int(row.clicks or 0),
             "earnings": float(row.earnings or 0),
+        }
+        for row in rows
+    ]
+
+
+def admin_daily_metrics(days=14):
+    start_date = date.today() - timedelta(days=days - 1)
+
+    rows = (
+        db.session.query(
+            func.date(TrackingEvent.created_at).label("day"),
+            func.sum(
+                case((TrackingEvent.event_type == "click", 1), else_=0)
+            ).label("clicks"),
+            func.sum(
+                case((TrackingEvent.event_type == "impression", 1), else_=0)
+            ).label("impressions"),
+            func.sum(
+                case((TrackingEvent.event_type == "click", Campaign.buyer_cpc), else_=0)
+            ).label("spend"),
+            func.sum(
+                case(
+                    (TrackingEvent.event_type == "click", Campaign.partner_payout),
+                    else_=0,
+                )
+            ).label("earnings"),
+            func.sum(
+                case(
+                    (
+                        TrackingEvent.event_type == "click",
+                        Campaign.buyer_cpc - Campaign.partner_payout,
+                    ),
+                    else_=0,
+                )
+            ).label("profit"),
+        )
+        .join(Campaign, TrackingEvent.campaign_id == Campaign.id)
+        .filter(TrackingEvent.created_at >= start_date)
+        .group_by("day")
+        .all()
+    )
+
+    return build_daily_series(rows, days)
+
+
+def admin_top_campaigns(limit=5):
+    rows = (
+        db.session.query(
+            Campaign.id,
+            Campaign.name,
+            func.sum(Campaign.buyer_cpc).label("spend"),
+            func.count(TrackingEvent.id).label("clicks"),
+        )
+        .join(TrackingEvent, TrackingEvent.campaign_id == Campaign.id)
+        .filter(TrackingEvent.event_type == "click")
+        .group_by(Campaign.id, Campaign.name)
+        .order_by(func.sum(Campaign.buyer_cpc).desc())
+        .limit(limit)
+        .all()
+    )
+
+    return [
+        {
+            "id": row.id,
+            "name": row.name,
+            "spend": float(row.spend or 0),
+            "clicks": int(row.clicks or 0),
+        }
+        for row in rows
+    ]
+
+
+def admin_top_partners(limit=5):
+    rows = (
+        db.session.query(
+            User.id,
+            User.email,
+            func.sum(Campaign.partner_payout).label("earnings"),
+            func.count(TrackingEvent.id).label("clicks"),
+        )
+        .join(TrackingEvent, TrackingEvent.partner_id == User.id)
+        .join(Campaign, TrackingEvent.campaign_id == Campaign.id)
+        .filter(TrackingEvent.event_type == "click")
+        .group_by(User.id, User.email)
+        .order_by(func.sum(Campaign.partner_payout).desc())
+        .limit(limit)
+        .all()
+    )
+
+    return [
+        {
+            "id": row.id,
+            "email": row.email,
+            "earnings": float(row.earnings or 0),
+            "clicks": int(row.clicks or 0),
         }
         for row in rows
     ]

@@ -55,7 +55,7 @@ def _partner_ctr(campaign_id, partner_id):
     return _ctr(clicks, impressions)
 
 
-def select_ad_for_partner(partner_id, category=None, geo=None):
+def select_ad_for_partner(partner_id, category=None, geo=None, device=None, placement=None):
     today = date.today()
 
     campaigns = (
@@ -73,6 +73,16 @@ def select_ad_for_partner(partner_id, category=None, geo=None):
     if geo:
         campaigns = campaigns.filter(
             or_(Campaign.targeting_geo.is_(None), Campaign.targeting_geo == geo)
+        )
+
+    if device:
+        campaigns = campaigns.filter(
+            or_(Campaign.targeting_device.is_(None), Campaign.targeting_device == device)
+        )
+
+    if placement:
+        campaigns = campaigns.filter(
+            or_(Campaign.targeting_placement.is_(None), Campaign.targeting_placement == placement)
         )
 
     candidates = []

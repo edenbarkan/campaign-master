@@ -9,6 +9,7 @@ from app.models.assignment import AdAssignment
 from app.models.campaign import Campaign
 from app.models.tracking_event import TrackingEvent
 from app.models.user import User
+from app.services.pricing import compute_partner_payout
 
 
 def get_or_create_user(email, role, password):
@@ -22,18 +23,19 @@ def get_or_create_user(email, role, password):
     return user
 
 
-def get_or_create_campaign(buyer_id, name, buyer_cpc, partner_payout, budget_total, category, geo):
+def get_or_create_campaign(buyer_id, name, max_cpc, budget_total, category, geo):
     campaign = Campaign.query.filter_by(buyer_id=buyer_id, name=name).first()
     if campaign:
         return campaign
+    partner_payout = compute_partner_payout(Decimal(max_cpc))
     campaign = Campaign(
         buyer_id=buyer_id,
         name=name,
         status="active",
         budget_total=Decimal(budget_total),
         budget_spent=Decimal("0.00"),
-        buyer_cpc=Decimal(buyer_cpc),
-        partner_payout=Decimal(partner_payout),
+        buyer_cpc=Decimal(max_cpc),
+        partner_payout=partner_payout,
         targeting_category=category,
         targeting_geo=geo,
     )
@@ -114,12 +116,12 @@ def seed_events(campaign, ad, partner):
 def seed_demo_data():
     buyer = get_or_create_user("buyer@demo.com", "buyer", "buyerpass")
     partner = get_or_create_user("partner@demo.com", "partner", "partnerpass")
+    get_or_create_user("admin@demo.com", "admin", "adminpass")
 
     campaign = get_or_create_campaign(
         buyer.id,
         "Pulse Launch",
         "2.50",
-        "1.25",
         "1500.00",
         "Fitness",
         "US",

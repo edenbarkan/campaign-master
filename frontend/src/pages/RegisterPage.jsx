@@ -19,7 +19,11 @@ const RegisterPage = () => {
 
     try {
       const user = await register(email, password, role);
-      navigate(user.role === "buyer" ? "/buyer" : "/partner");
+      if (user.role === "BUYER") {
+        navigate("/buyer/dashboard");
+      } else {
+        navigate("/partner/dashboard");
+      }
     } catch (err) {
       setError("Unable to register. Try a different email.");
     } finally {

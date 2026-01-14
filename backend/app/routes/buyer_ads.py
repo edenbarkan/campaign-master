@@ -37,8 +37,23 @@ def list_ads(campaign_id):
     if not campaign:
         return jsonify({"error": "not_found"}), 404
 
-    ads = Ad.query.filter_by(campaign_id=campaign.id).order_by(Ad.id.desc()).all()
-    return jsonify({"ads": [ad_to_dict(ad) for ad in ads]})
+    limit = request.args.get("limit", 50)
+    offset = request.args.get("offset", 0)
+    try:
+        limit = max(1, min(int(limit), 200))
+        offset = max(0, int(offset))
+    except (TypeError, ValueError):
+        return jsonify({"error": "invalid_pagination"}), 400
+
+    base_query = Ad.query.filter_by(campaign_id=campaign.id)
+    total = base_query.count()
+    ads = base_query.order_by(Ad.id.desc()).limit(limit).offset(offset).all()
+    return jsonify(
+        {
+            "ads": [ad_to_dict(ad) for ad in ads],
+            "meta": {"limit": limit, "offset": offset, "total": total},
+        }
+    )
 
 
 @buyer_ads_bp.route("/api/buyer/campaigns/<int:campaign_id>/ads", methods=["POST"])

@@ -32,7 +32,7 @@ def register():
         jsonify(
             {
                 "access_token": token,
-                "user": {"id": user.id, "email": user.email, "role": user.role},
+                "user": {"id": user.id, "email": user.email, "role": user.role.upper()},
             }
         ),
         201,
@@ -56,7 +56,7 @@ def login():
     return jsonify(
         {
             "access_token": token,
-            "user": {"id": user.id, "email": user.email, "role": user.role},
+            "user": {"id": user.id, "email": user.email, "role": user.role.upper()},
         }
     )
 
@@ -71,4 +71,6 @@ def me():
     user = User.query.get(user_id)
     if not user:
         return jsonify({"error": "not_found"}), 404
-    return jsonify({"user": {"id": user.id, "email": user.email, "role": user.role}})
+    return jsonify(
+        {"user": {"id": user.id, "email": user.email, "role": user.role.upper()}}
+    )

@@ -7,6 +7,7 @@ from flask_jwt_extended import get_jwt_identity
 from app.auth.decorators import roles_required
 from app.extensions import db
 from app.models.campaign import Campaign
+from app.services.pricing import compute_partner_payout, get_platform_fee_percent
 
 buyer_campaigns_bp = Blueprint("buyer_campaigns", __name__)
 
@@ -38,10 +39,14 @@ def campaign_to_dict(campaign):
         "budget_spent": float(campaign.budget_spent),
         "budget_remaining": float(campaign.budget_remaining),
         "buyer_cpc": float(campaign.buyer_cpc),
+        "max_cpc": float(campaign.max_cpc),
         "partner_payout": float(campaign.partner_payout),
+        "platform_fee_percent": float(get_platform_fee_percent()),
         "targeting": {
             "category": campaign.targeting_category,
             "geo": campaign.targeting_geo,
+            "device": campaign.targeting_device,
+            "placement": campaign.targeting_placement,
         },
         "start_date": campaign.start_date.isoformat() if campaign.start_date else None,
         "end_date": campaign.end_date.isoformat() if campaign.end_date else None,
@@ -55,8 +60,30 @@ def list_campaigns():
         buyer_id = int(get_jwt_identity())
     except (TypeError, ValueError):
         return jsonify({"error": "invalid_identity"}), 401
-    campaigns = Campaign.query.filter_by(buyer_id=buyer_id).order_by(Campaign.id.desc()).all()
-    return jsonify({"campaigns": [campaign_to_dict(c) for c in campaigns]})
+    limit = request.args.get("limit", 50)
+    offset = request.args.get("offset", 0)
+    try:
+        limit = max(1, min(int(limit), 200))
+        offset = max(0, int(offset))
+    except (TypeError, ValueError):
+        return jsonify({"error": "invalid_pagination"}), 400
+
+    base_query = Campaign.query.filter_by(buyer_id=buyer_id)
+    total = base_query.count()
+    campaigns = (
+        base_query.order_by(Campaign.id.desc()).limit(limit).offset(offset).all()
+    )
+    return jsonify(
+        {
+            "campaigns": [campaign_to_dict(c) for c in campaigns],
+            "meta": {
+                "limit": limit,
+                "offset": offset,
+                "total": total,
+                "platform_fee_percent": float(get_platform_fee_percent()),
+            },
+        }
+    )
 
 
 @buyer_campaigns_bp.route("/api/buyer/campaigns", methods=["POST"])
@@ -76,28 +103,29 @@ def create_campaign():
 
     try:
         budget_total = parse_decimal(payload.get("budget_total"), "budget_total")
-        buyer_cpc = parse_decimal(payload.get("buyer_cpc"), "buyer_cpc")
-        partner_payout = parse_decimal(payload.get("partner_payout"), "partner_payout")
+        max_cpc_value = payload.get("max_cpc", payload.get("buyer_cpc"))
+        max_cpc = parse_decimal(max_cpc_value, "max_cpc")
         start_date = parse_date(payload.get("start_date"), "start_date")
         end_date = parse_date(payload.get("end_date"), "end_date")
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
 
-    if budget_total <= 0 or buyer_cpc <= 0 or partner_payout < 0:
+    if budget_total <= 0 or max_cpc <= 0:
         return jsonify({"error": "invalid_pricing"}), 400
 
-    if buyer_cpc < partner_payout:
-        return jsonify({"error": "margin_negative"}), 400
+    partner_payout = compute_partner_payout(max_cpc)
 
     campaign = Campaign(
         buyer_id=buyer_id,
         name=name,
         status=status,
         budget_total=budget_total,
-        buyer_cpc=buyer_cpc,
+        buyer_cpc=max_cpc,
         partner_payout=partner_payout,
         targeting_category=(payload.get("targeting", {}) or {}).get("category"),
         targeting_geo=(payload.get("targeting", {}) or {}).get("geo"),
+        targeting_device=(payload.get("targeting", {}) or {}).get("device"),
+        targeting_placement=(payload.get("targeting", {}) or {}).get("placement"),
         start_date=start_date,
         end_date=end_date,
     )
@@ -154,31 +182,24 @@ def update_campaign(campaign_id):
             return jsonify({"error": "invalid_budget_total"}), 400
         campaign.budget_total = budget_total
 
-    if "buyer_cpc" in payload:
+    if "buyer_cpc" in payload or "max_cpc" in payload:
         try:
-            buyer_cpc = parse_decimal(payload.get("buyer_cpc"), "buyer_cpc")
+            max_cpc_value = payload.get("max_cpc", payload.get("buyer_cpc"))
+            buyer_cpc = parse_decimal(max_cpc_value, "max_cpc")
         except ValueError as exc:
             return jsonify({"error": str(exc)}), 400
         if buyer_cpc <= 0:
             return jsonify({"error": "invalid_buyer_cpc"}), 400
         campaign.buyer_cpc = buyer_cpc
 
-    if "partner_payout" in payload:
-        try:
-            partner_payout = parse_decimal(payload.get("partner_payout"), "partner_payout")
-        except ValueError as exc:
-            return jsonify({"error": str(exc)}), 400
-        if partner_payout < 0:
-            return jsonify({"error": "invalid_partner_payout"}), 400
-        campaign.partner_payout = partner_payout
-
-    if campaign.buyer_cpc < campaign.partner_payout:
-        return jsonify({"error": "margin_negative"}), 400
+    campaign.partner_payout = compute_partner_payout(campaign.buyer_cpc)
 
     if "targeting" in payload:
         targeting = payload.get("targeting") or {}
         campaign.targeting_category = targeting.get("category")
         campaign.targeting_geo = targeting.get("geo")
+        campaign.targeting_device = targeting.get("device")
+        campaign.targeting_placement = targeting.get("placement")
 
     if "start_date" in payload:
         try:

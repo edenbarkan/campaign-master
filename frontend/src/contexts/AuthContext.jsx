@@ -5,6 +5,13 @@ import { apiFetch } from "../lib/api";
 const AuthContext = createContext(null);
 const STORAGE_KEY = "cm_token";
 
+const normalizeRole = (role) => (role ? role.toUpperCase() : role);
+
+const normalizeUser = (user) => {
+  if (!user) return null;
+  return { ...user, role: normalizeRole(user.role) };
+};
+
 export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(() => localStorage.getItem(STORAGE_KEY));
   const [user, setUser] = useState(null);
@@ -23,7 +30,7 @@ export const AuthProvider = ({ children }) => {
     apiFetch("/auth/me", { token })
       .then((payload) => {
         if (!active) return;
-        setUser(payload.user);
+        setUser(normalizeUser(payload.user));
         setLoading(false);
       })
       .catch(() => {
@@ -46,8 +53,9 @@ export const AuthProvider = ({ children }) => {
     });
     setToken(payload.access_token);
     localStorage.setItem(STORAGE_KEY, payload.access_token);
-    setUser(payload.user);
-    return payload.user;
+    const normalized = normalizeUser(payload.user);
+    setUser(normalized);
+    return normalized;
   };
 
   const register = async (email, password, role) => {
@@ -57,8 +65,9 @@ export const AuthProvider = ({ children }) => {
     });
     setToken(payload.access_token);
     localStorage.setItem(STORAGE_KEY, payload.access_token);
-    setUser(payload.user);
-    return payload.user;
+    const normalized = normalizeUser(payload.user);
+    setUser(normalized);
+    return normalized;
   };
 
   const logout = () => {

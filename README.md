@@ -8,6 +8,9 @@ Production-like AdTech MVP scaffold with Flask, React, Postgres, and Nginx.
 docker compose up -d --build
 ```
 
+Key environment variables (see `.env.example`):
+- `PLATFORM_FEE_PERCENT`: platform fee used to compute partner payout (default 30).
+
 Health check:
 
 ```bash
@@ -19,6 +22,17 @@ Seed demo data:
 ```bash
 docker compose exec backend python -m app.seed
 ```
+
+Backend runs via Gunicorn (configured in `backend/entrypoint.sh`) for stability.
+
+Demo accounts:
+- Buyer: `buyer@demo.com` / `buyerpass`
+- Partner: `partner@demo.com` / `partnerpass`
+- Admin: `admin@demo.com` / `adminpass`
+
+Manual QA:
+- Admin login should land on `/admin/dashboard`.
+- Visiting `/partner/dashboard` as admin should redirect to `/admin/dashboard`.
 
 ## Reset
 

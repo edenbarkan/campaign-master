@@ -193,7 +193,7 @@ const CampaignDetailPage = () => {
             ) : null}
             <div className="table">
               {ads.map((ad) => (
-                <div className="table-row" key={ad.id}>
+                <div className="table-row compact" key={ad.id}>
                   <div>
                     <p className="row-title">{ad.title}</p>
                     <p className="muted">{ad.active ? "Active" : "Paused"}</p>

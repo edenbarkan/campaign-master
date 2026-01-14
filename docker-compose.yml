@@ -14,6 +14,7 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/campaign_master
       JWT_SECRET_KEY: dev-jwt-secret
       SECRET_KEY: dev-secret
+      PLATFORM_FEE_PERCENT: 30
     depends_on:
       - db
 

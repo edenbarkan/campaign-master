@@ -91,7 +91,7 @@ const PartnerDashboardPage = () => {
           <h2>Top campaigns</h2>
           <div className="table">
             {campaigns.map((campaign) => (
-              <div className="table-row" key={campaign.id}>
+              <div className="table-row compact" key={campaign.id}>
                 <div>
                   <p className="row-title">{campaign.name}</p>
                   <p className="muted">{campaign.clicks} clicks</p>

@@ -45,7 +45,9 @@ def request_ad():
     placement = (request.args.get("placement") or "").strip() or None
     device = (request.args.get("device") or "").strip() or None
 
-    ad, campaign = select_ad_for_partner(partner_id, category=category, geo=geo)
+    ad, campaign = select_ad_for_partner(
+        partner_id, category=category, geo=geo, device=device, placement=placement
+    )
     if not ad or not campaign:
         return jsonify({"error": "no_fill"}), 404
 

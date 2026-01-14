@@ -2,6 +2,7 @@ import React from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import { useAuth } from "./contexts/AuthContext";
+import AdminDashboardPage from "./pages/AdminDashboardPage.jsx";
 import BuyerDashboardPage from "./pages/BuyerDashboardPage.jsx";
 import BuyerHome from "./pages/BuyerHome.jsx";
 import CampaignDetailPage from "./pages/CampaignDetailPage.jsx";
@@ -9,6 +10,8 @@ import LoginPage from "./pages/LoginPage.jsx";
 import PartnerDashboardPage from "./pages/PartnerDashboardPage.jsx";
 import PartnerHome from "./pages/PartnerHome.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
+
+const normalizeRole = (role) => (role ? role.toUpperCase() : "");
 
 const ProtectedRoute = ({ children, role }) => {
   const { user, loading } = useAuth();
@@ -25,8 +28,17 @@ const ProtectedRoute = ({ children, role }) => {
     return <Navigate to="/login" replace />;
   }
 
-  if (role && user.role !== role) {
-    return <Navigate to={user.role === "buyer" ? "/buyer" : "/partner"} replace />;
+  const currentRole = normalizeRole(user.role);
+  const expectedRole = normalizeRole(role);
+
+  if (role && currentRole !== expectedRole) {
+    if (currentRole === "BUYER") {
+      return <Navigate to="/buyer/dashboard" replace />;
+    }
+    if (currentRole === "PARTNER") {
+      return <Navigate to="/partner/dashboard" replace />;
+    }
+    return <Navigate to="/admin/dashboard" replace />;
   }
 
   return children;
@@ -47,7 +59,15 @@ const IndexRoute = () => {
     return <Navigate to="/login" replace />;
   }
 
-  return <Navigate to={user.role === "buyer" ? "/buyer" : "/partner"} replace />;
+  const currentRole = normalizeRole(user.role);
+
+  if (currentRole === "BUYER") {
+    return <Navigate to="/buyer/dashboard" replace />;
+  }
+  if (currentRole === "PARTNER") {
+    return <Navigate to="/partner/dashboard" replace />;
+  }
+  return <Navigate to="/admin/dashboard" replace />;
 };
 
 const App = () => {
@@ -59,7 +79,7 @@ const App = () => {
       <Route
         path="/buyer"
         element={
-          <ProtectedRoute role="buyer">
+          <ProtectedRoute role="BUYER">
             <Navigate to="/buyer/dashboard" replace />
           </ProtectedRoute>
         }
@@ -67,7 +87,7 @@ const App = () => {
       <Route
         path="/buyer/dashboard"
         element={
-          <ProtectedRoute role="buyer">
+          <ProtectedRoute role="BUYER">
             <BuyerDashboardPage />
           </ProtectedRoute>
         }
@@ -75,7 +95,7 @@ const App = () => {
       <Route
         path="/buyer/campaigns"
         element={
-          <ProtectedRoute role="buyer">
+          <ProtectedRoute role="BUYER">
             <BuyerHome />
           </ProtectedRoute>
         }
@@ -83,7 +103,7 @@ const App = () => {
       <Route
         path="/buyer/campaigns/:campaignId"
         element={
-          <ProtectedRoute role="buyer">
+          <ProtectedRoute role="BUYER">
             <CampaignDetailPage />
           </ProtectedRoute>
         }
@@ -91,15 +111,23 @@ const App = () => {
       <Route
         path="/partner"
         element={
-          <ProtectedRoute role="partner">
+          <ProtectedRoute role="PARTNER">
             <Navigate to="/partner/dashboard" replace />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/dashboard"
+        element={
+          <ProtectedRoute role="ADMIN">
+            <AdminDashboardPage />
           </ProtectedRoute>
         }
       />
       <Route
         path="/partner/dashboard"
         element={
-          <ProtectedRoute role="partner">
+          <ProtectedRoute role="PARTNER">
             <PartnerDashboardPage />
           </ProtectedRoute>
         }
@@ -107,7 +135,7 @@ const App = () => {
       <Route
         path="/partner/get-ad"
         element={
-          <ProtectedRoute role="partner">
+          <ProtectedRoute role="PARTNER">
             <PartnerHome />
           </ProtectedRoute>
         }
