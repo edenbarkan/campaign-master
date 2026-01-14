@@ -1,6 +1,10 @@
+import os
 import secrets
+import time
 from datetime import datetime, timedelta
 from decimal import Decimal
+
+import psycopg2
 
 from app import create_app
 from app.extensions import db
@@ -137,7 +141,25 @@ def seed_demo_data():
     seed_events(campaign, ad, partner)
 
 
+def wait_for_db(max_seconds=30):
+    database_url = os.getenv("DATABASE_URL")
+    if not database_url:
+        return
+
+    deadline = time.time() + max_seconds
+    while time.time() < deadline:
+        try:
+            conn = psycopg2.connect(database_url)
+            conn.close()
+            return
+        except Exception:
+            time.sleep(1)
+
+    raise RuntimeError("Database connection failed after retries")
+
+
 def main():
+    wait_for_db()
     app = create_app()
     with app.app_context():
         seed_demo_data()

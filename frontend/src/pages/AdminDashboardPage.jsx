@@ -9,7 +9,7 @@ import {
   YAxis
 } from "recharts";
 
-import AdminHeader from "../components/AdminHeader.jsx";
+import RoleHeader from "../components/RoleHeader.jsx";
 import { useAuth } from "../contexts/AuthContext";
 import { apiFetch } from "../lib/api";
 
@@ -36,7 +36,7 @@ const AdminDashboardPage = () => {
     return (
       <main className="page dashboard">
         <section className="panel">
-          <AdminHeader subtitle="Monitoring platform profit and payouts." />
+          <RoleHeader subtitle="Monitoring platform profit and payouts." />
           <p className="muted">Loading analytics...</p>
           {error ? <p className="error">{error}</p> : null}
         </section>
@@ -49,7 +49,7 @@ const AdminDashboardPage = () => {
   return (
     <main className="page dashboard">
       <section className="panel">
-        <AdminHeader subtitle="Monitoring platform profit and payouts." />
+        <RoleHeader subtitle="Monitoring platform profit and payouts." />
         <div className="metrics">
           <div className="metric-card">
             <p>Total spend</p>

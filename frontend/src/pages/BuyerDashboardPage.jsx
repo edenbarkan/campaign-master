@@ -9,7 +9,7 @@ import {
   YAxis
 } from "recharts";
 
-import BuyerHeader from "../components/BuyerHeader.jsx";
+import RoleHeader from "../components/RoleHeader.jsx";
 import { useAuth } from "../contexts/AuthContext";
 import { apiFetch } from "../lib/api";
 
@@ -29,7 +29,7 @@ const BuyerDashboardPage = () => {
     return (
       <main className="page dashboard">
         <section className="panel">
-          <BuyerHeader subtitle="Tracking spend, clicks, and efficiency." />
+          <RoleHeader subtitle="Tracking spend, clicks, and efficiency." />
           <p className="muted">Loading analytics...</p>
           {error ? <p className="error">{error}</p> : null}
         </section>
@@ -42,7 +42,7 @@ const BuyerDashboardPage = () => {
   return (
     <main className="page dashboard">
       <section className="panel">
-        <BuyerHeader subtitle="Tracking spend, clicks, and efficiency." />
+        <RoleHeader subtitle="Tracking spend, clicks, and efficiency." />
         <div className="metrics">
           <div className="metric-card">
             <p>Spend</p>

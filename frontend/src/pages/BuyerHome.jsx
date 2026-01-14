@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
-import BuyerHeader from "../components/BuyerHeader.jsx";
+import RoleHeader from "../components/RoleHeader.jsx";
 import { useAuth } from "../contexts/AuthContext";
 import { apiFetch } from "../lib/api";
 
@@ -150,7 +150,7 @@ const BuyerHome = () => {
   return (
     <main className="page dashboard">
       <section className="panel">
-        <BuyerHeader
+        <RoleHeader
           title={`Hello, ${user?.email}`}
           subtitle="Launch campaigns and manage pricing."
         />

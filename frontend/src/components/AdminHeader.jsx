@@ -8,7 +8,7 @@ const AdminHeader = ({ title, subtitle }) => {
   return (
     <header className="panel-header">
       <div>
-        <p className="eyebrow">Admin workspace</p>
+        <p className="eyebrow">ADMIN WORKSPACE</p>
         <h1>{title || `Welcome, ${user?.email}`}</h1>
         {subtitle ? <p className="subhead">{subtitle}</p> : null}
       </div>

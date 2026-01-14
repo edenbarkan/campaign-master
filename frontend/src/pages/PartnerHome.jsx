@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-import PartnerHeader from "../components/PartnerHeader.jsx";
+import RoleHeader from "../components/RoleHeader.jsx";
 import { useAuth } from "../contexts/AuthContext";
 import { apiFetch } from "../lib/api";
 
@@ -68,7 +68,7 @@ const PartnerHome = () => {
   return (
     <main className="page dashboard">
       <section className="panel">
-        <PartnerHeader
+        <RoleHeader
           title={`Welcome, ${user?.email}`}
           subtitle="Request a fresh ad and start earning."
         />

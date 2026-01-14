@@ -9,7 +9,7 @@ import {
   YAxis
 } from "recharts";
 
-import PartnerHeader from "../components/PartnerHeader.jsx";
+import RoleHeader from "../components/RoleHeader.jsx";
 import { useAuth } from "../contexts/AuthContext";
 import { apiFetch } from "../lib/api";
 
@@ -29,7 +29,7 @@ const PartnerDashboardPage = () => {
     return (
       <main className="page dashboard">
         <section className="panel">
-          <PartnerHeader subtitle="Tracking earnings and click quality." />
+          <RoleHeader subtitle="Tracking earnings and click quality." />
           <p className="muted">Loading analytics...</p>
           {error ? <p className="error">{error}</p> : null}
         </section>
@@ -42,7 +42,7 @@ const PartnerDashboardPage = () => {
   return (
     <main className="page dashboard">
       <section className="panel">
-        <PartnerHeader subtitle="Tracking earnings and click quality." />
+        <RoleHeader subtitle="Tracking earnings and click quality." />
         <div className="metrics">
           <div className="metric-card">
             <p>Earnings</p>

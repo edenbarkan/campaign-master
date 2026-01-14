@@ -1,12 +1,10 @@
 import React from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 import { useAuth } from "../contexts/AuthContext";
 
 const PartnerHeader = ({ title, subtitle }) => {
   const { user, logout } = useAuth();
-  const location = useLocation();
-
   const links = [
     { to: "/partner/dashboard", label: "Dashboard" },
     { to: "/partner/get-ad", label: "Get Ad" }
@@ -15,7 +13,7 @@ const PartnerHeader = ({ title, subtitle }) => {
   return (
     <header className="panel-header">
       <div>
-        <p className="eyebrow">Partner workspace</p>
+        <p className="eyebrow">PARTNER WORKSPACE</p>
         <h1>{title || `Welcome, ${user?.email}`}</h1>
         {subtitle ? <p className="subhead">{subtitle}</p> : null}
         <nav className="subnav">
@@ -23,7 +21,6 @@ const PartnerHeader = ({ title, subtitle }) => {
             <Link
               key={link.to}
               to={link.to}
-              className={location.pathname === link.to ? "active" : ""}
             >
               {link.label}
             </Link>
