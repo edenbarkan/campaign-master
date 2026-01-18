@@ -4,6 +4,8 @@ import { Link } from "react-router-dom";
 import RoleHeader from "../components/RoleHeader.jsx";
 import { useAuth } from "../contexts/AuthContext";
 import { apiFetch } from "../lib/api";
+import { safeStorage } from "../lib/storage";
+import { UI_STRINGS } from "../lib/strings";
 
 const round2 = (value) => {
   if (Number.isNaN(value)) return 0;
@@ -20,6 +22,7 @@ const emptyForm = {
   name: "",
   status: "active",
   budget_total: "",
+  budget_spent: 0,
   max_cpc: "",
   targeting_category: "",
   targeting_geo: "",
@@ -31,6 +34,9 @@ const emptyForm = {
 
 const BuyerHome = () => {
   const { user, token } = useAuth();
+  const [viewMode, setViewMode] = useState(() =>
+    safeStorage.get("buyer_view_mode", "simple")
+  );
   const [campaigns, setCampaigns] = useState([]);
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
@@ -38,6 +44,10 @@ const BuyerHome = () => {
   const [error, setError] = useState("");
   const [platformFeePercent, setPlatformFeePercent] = useState(30);
   const computedPayout = computePayout(Number(form.max_cpc), platformFeePercent);
+  const remainingBudget = round2(
+    Math.max(0, Number(form.budget_total || 0) - Number(form.budget_spent || 0))
+  );
+  const isAdvanced = viewMode === "advanced";
 
   const loadCampaigns = async () => {
     try {
@@ -63,6 +73,10 @@ const BuyerHome = () => {
     if (!token) return;
     loadCampaigns();
   }, [token]);
+
+  useEffect(() => {
+    safeStorage.set("buyer_view_mode", viewMode);
+  }, [viewMode]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -134,6 +148,7 @@ const BuyerHome = () => {
       name: campaign.name,
       status: campaign.status,
       budget_total: campaign.budget_total,
+      budget_spent: campaign.budget_spent ?? 0,
       max_cpc: campaign.max_cpc ?? campaign.buyer_cpc,
       targeting_category: campaign.targeting?.category || "",
       targeting_geo: campaign.targeting?.geo || "",
@@ -158,8 +173,26 @@ const BuyerHome = () => {
       <section className="panel">
         <RoleHeader
           title={`Hello, ${user?.email}`}
-          subtitle="Launch campaigns and manage pricing."
+          subtitle={UI_STRINGS.buyer.launchSubtitle}
         />
+        <div className="view-toggle" role="group" aria-label="Buyer view mode">
+          <button
+            type="button"
+            className={`toggle-button ${!isAdvanced ? "active" : ""}`}
+            onClick={() => setViewMode("simple")}
+            aria-pressed={!isAdvanced}
+          >
+            {UI_STRINGS.common.simpleView}
+          </button>
+          <button
+            type="button"
+            className={`toggle-button ${isAdvanced ? "active" : ""}`}
+            onClick={() => setViewMode("advanced")}
+            aria-pressed={isAdvanced}
+          >
+            {UI_STRINGS.common.advancedView}
+          </button>
+        </div>
         <div className="grid">
           <section className="card">
             <h2>{editingId ? "Edit campaign" : "New campaign"}</h2>
@@ -180,6 +213,7 @@ const BuyerHome = () => {
                   <option value="active">Active</option>
                   <option value="paused">Paused</option>
                 </select>
+                <span className="helper-text">{UI_STRINGS.common.statusHelper}</span>
               </label>
               <div className="field-row">
                 <label className="field">
@@ -216,7 +250,9 @@ const BuyerHome = () => {
                   />
                 </label>
                 <label className="field">
-                  <span>Partner payout (computed)</span>
+                  <span title={UI_STRINGS.common.partnerPayoutTooltip}>
+                    Partner payout (computed)
+                  </span>
                   <input
                     value={`$${computedPayout.toFixed(2)}`}
                     readOnly
@@ -225,64 +261,74 @@ const BuyerHome = () => {
               </div>
               <div className="field-row">
                 <label className="field">
-                  <span>Targeting category</span>
-                  <input
-                    name="targeting_category"
-                    value={form.targeting_category}
-                    onChange={handleChange}
-                    placeholder="Fitness"
-                  />
-                </label>
-                <label className="field">
-                  <span>Targeting geo</span>
-                  <input
-                    name="targeting_geo"
-                    value={form.targeting_geo}
-                    onChange={handleChange}
-                    placeholder="US"
-                  />
+                  <span>Remaining budget (est.)</span>
+                  <input value={`$${remainingBudget.toFixed(2)}`} readOnly />
                 </label>
               </div>
-              <div className="field-row">
-                <label className="field">
-                  <span>Targeting device</span>
-                  <input
-                    name="targeting_device"
-                    value={form.targeting_device}
-                    onChange={handleChange}
-                    placeholder="Mobile"
-                  />
-                </label>
-                <label className="field">
-                  <span>Targeting placement</span>
-                  <input
-                    name="targeting_placement"
-                    value={form.targeting_placement}
-                    onChange={handleChange}
-                    placeholder="Sidebar"
-                  />
-                </label>
-              </div>
-              <div className="field-row">
-                <label className="field">
-                  <span>Start date</span>
-                  <input
-                    name="start_date"
-                    type="date"
-                    value={form.start_date}
-                    onChange={handleChange}
-                  />
-                </label>
-                <label className="field">
-                  <span>End date</span>
-                  <input
-                    name="end_date"
-                    type="date"
-                    value={form.end_date}
-                    onChange={handleChange}
-                  />
-                </label>
-              </div>
+              {isAdvanced ? (
+                <>
+                  <div className="field-row">
+                    <label className="field">
+                      <span>Targeting category</span>
+                      <input
+                        name="targeting_category"
+                        value={form.targeting_category}
+                        onChange={handleChange}
+                        placeholder="Fitness"
+                      />
+                    </label>
+                    <label className="field">
+                      <span>Targeting geo</span>
+                      <input
+                        name="targeting_geo"
+                        value={form.targeting_geo}
+                        onChange={handleChange}
+                        placeholder="US"
+                      />
+                    </label>
+                  </div>
+                  <div className="field-row">
+                    <label className="field">
+                      <span>Targeting device</span>
+                      <input
+                        name="targeting_device"
+                        value={form.targeting_device}
+                        onChange={handleChange}
+                        placeholder="Mobile"
+                      />
+                    </label>
+                    <label className="field">
+                      <span>Targeting placement</span>
+                      <input
+                        name="targeting_placement"
+                        value={form.targeting_placement}
+                        onChange={handleChange}
+                        placeholder="Sidebar"
+                      />
+                    </label>
+                  </div>
+                  <div className="field-row">
+                    <label className="field">
+                      <span>Start date</span>
+                      <input
+                        name="start_date"
+                        type="date"
+                        value={form.start_date}
+                        onChange={handleChange}
+                      />
+                    </label>
+                    <label className="field">
+                      <span>End date</span>
+                      <input
+                        name="end_date"
+                        type="date"
+                        value={form.end_date}
+                        onChange={handleChange}
+                      />
+                    </label>
+                  </div>
+                </>
+              ) : null}
               {error ? <p className="error">{error}</p> : null}
               <div className="actions">
                 <button className="button primary" type="submit">

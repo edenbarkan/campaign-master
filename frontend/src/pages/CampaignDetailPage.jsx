@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import RoleHeader from "../components/RoleHeader.jsx";
 import { useAuth } from "../contexts/AuthContext";
 import { apiFetch } from "../lib/api";
+import { UI_STRINGS } from "../lib/strings";
 
 const emptyAd = {
   title: "",
@@ -152,6 +153,7 @@ const CampaignDetailPage = () => {
                   placeholder="https://..."
                   required
                 />
+                <span className="helper-text">{UI_STRINGS.common.imageUrlHelper}</span>
               </label>
               <label className="field">
                 <span>Destination URL</span>
@@ -162,6 +164,7 @@ const CampaignDetailPage = () => {
                   placeholder="https://brand.com/landing"
                   required
                 />
+                <span className="helper-text">{UI_STRINGS.common.destinationUrlHelper}</span>
               </label>
               <label className="checkbox">
                 <input

@@ -121,6 +121,27 @@ Key env knobs:
 - Exploration: `EXPLORATION_*`.
 - Delivery balancing: `DELIVERY_*`.
 
+## Iteration 5: UX hardening controls
+
+- Simple/Advanced view toggles for Buyer and Partner pages (persisted in localStorage).
+- Role-based onboarding overlay (dismissed once per role).
+- "Market Stability Guard" note clarifies scoring is rank-only.
+- Admin 7d/30d/90d date range filter + reject-reason drill-down panel.
+
+Atlas E2E plan: `docs/atlas_e2e_plan.md`.
+
+## Demo script (fast walkthrough)
+
+1) Login as buyer → `http://localhost:8081/buyer/dashboard`.
+2) Toggle Simple/Advanced, confirm persistence on refresh.
+3) Open a campaign and show partner payout + remaining budget helper.
+4) Logout, then login as partner → `http://localhost:8081/partner/dashboard`.
+5) Request an ad; show TL;DR vs Advanced "Why this ad?" breakdown.
+6) Logout, then login as admin → `http://localhost:8081/admin/dashboard`.
+7) Click 7d/30d/90d filters and open a reject reason detail panel.
+
+Always logout before switching roles.
+
 ## Reject penalty verification
 
 ```bash

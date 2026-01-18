@@ -12,6 +12,9 @@ import {
 import RoleHeader from "../components/RoleHeader.jsx";
 import { useAuth } from "../contexts/AuthContext";
 import { apiFetch } from "../lib/api";
+import OnboardingOverlay from "../components/OnboardingOverlay.jsx";
+import { safeStorage } from "../lib/storage";
+import { UI_STRINGS } from "../lib/strings";
 
 const AdminDashboardPage = () => {
   const { token } = useAuth();
@@ -21,14 +24,27 @@ const AdminDashboardPage = () => {
   const [riskSeries, setRiskSeries] = useState(null);
   const [riskPartners, setRiskPartners] = useState(null);
   const [error, setError] = useState("");
+  const [showOnboarding, setShowOnboarding] = useState(() =>
+    safeStorage.get("onboarding_admin_dismissed", "0") !== "1"
+  );
+  const [rangeDays, setRangeDays] = useState(30);
+  const [selectedReason, setSelectedReason] = useState(null);
+
+  const rangeOptions = [7, 30, 90];
+  const formatDate = (value) => value.toISOString().slice(0, 10);
 
   useEffect(() => {
     if (!token) return;
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(endDate.getDate() - (rangeDays - 1));
+    const fromValue = formatDate(startDate);
+    const toValue = formatDate(endDate);
     Promise.all([
-      apiFetch("/admin/analytics/summary", { token }),
-      apiFetch("/admin/analytics/series", { token }),
+      apiFetch(`/admin/analytics/summary?days=${rangeDays}`, { token }),
+      apiFetch(`/admin/analytics/series?days=${rangeDays}`, { token }),
       apiFetch("/admin/risk/summary", { token }),
-      apiFetch("/admin/risk/series", { token }),
+      apiFetch(`/admin/risk/series?from=${fromValue}&to=${toValue}`, { token }),
       apiFetch("/admin/risk/top-partners", { token })
     ])
       .then(
@@ -46,7 +62,12 @@ const AdminDashboardPage = () => {
         setRiskPartners(riskPartnersResponse.partners || []);
       })
       .catch(() => setError("Unable to load admin analytics."));
-  }, [token]);
+  }, [token, rangeDays]);
+
+  const dismissOnboarding = () => {
+    safeStorage.set("onboarding_admin_dismissed", "1");
+    setShowOnboarding(false);
+  };
 
   if (!summary || !series || !riskSummary || !riskSeries || !riskPartners) {
     return (
@@ -72,11 +93,54 @@ const AdminDashboardPage = () => {
   const marketplaceFillRate = (marketplaceHealth?.fill_rate || 0) * 100;
   const marketplaceRejectRate = (marketplaceHealth?.reject_rate || 0) * 100;
   const marketplaceTakeRate = (marketplaceHealth?.take_rate || 0) * 100;
+  const reasonDetails = {
+    DUPLICATE_CLICK: {
+      title: "Duplicate click",
+      detail: "Multiple clicks from the same IP within the duplicate window.",
+      mitigation: "Encourage unique traffic and avoid rapid retries."
+    },
+    RATE_LIMIT: {
+      title: "Rate limit",
+      detail: "Click velocity exceeded the per-minute cap.",
+      mitigation: "Throttle high-velocity sources and smooth traffic bursts."
+    },
+    BUDGET_EXHAUSTED: {
+      title: "Budget exhausted",
+      detail: "Campaign budget could not cover the max CPC.",
+      mitigation: "Increase budget or lower max CPC to resume delivery."
+    },
+    INVALID_ASSIGNMENT: {
+      title: "Invalid assignment",
+      detail: "Tracking code not found or expired.",
+      mitigation: "Ensure ads use the latest tracking URL."
+    },
+    BOT_SUSPECTED: {
+      title: "Bot suspected",
+      detail: "Missing or empty user-agent signal.",
+      mitigation: "Filter automated traffic and ensure UA is passed."
+    }
+  };
+  const selectedReasonDetail = selectedReason
+    ? reasonDetails[selectedReason] || null
+    : null;
 
   return (
     <main className="page dashboard">
       <section className="panel">
-        <RoleHeader subtitle="Monitoring platform profit and payouts." />
+        <RoleHeader subtitle={UI_STRINGS.admin.dashboardSubtitle} />
+        <div className="view-toggle" role="group" aria-label="Admin date range">
+          {rangeOptions.map((days) => (
+            <button
+              key={days}
+              type="button"
+              className={`toggle-button ${rangeDays === days ? "active" : ""}`}
+              onClick={() => setRangeDays(days)}
+              aria-pressed={rangeDays === days}
+            >
+              {days}d
+            </button>
+          ))}
+        </div>
         <div className="metrics">
           <div className="metric-card">
             <p>Total spend</p>
@@ -97,13 +161,15 @@ const AdminDashboardPage = () => {
         </div>
         <div className="grid charts">
           <section className="card">
-            <h2>Profit over time</h2>
+            <h2>Spend, earnings, profit</h2>
             <ResponsiveContainer width="100%" height={220}>
               <LineChart data={series}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" />
                 <YAxis />
                 <Tooltip />
+                <Line type="monotone" dataKey="spend" stroke="#0f766e" strokeWidth={2} />
+                <Line type="monotone" dataKey="earnings" stroke="#9333ea" strokeWidth={2} />
                 <Line type="monotone" dataKey="profit" stroke="#16a34a" strokeWidth={2} />
               </LineChart>
             </ResponsiveContainer>
@@ -224,6 +290,31 @@ const AdminDashboardPage = () => {
             </div>
           </section>
           <section className="card">
+            <h2>Reject reasons</h2>
+            <div className="table">
+              {(riskSummary.top_reasons || []).map((reason) => (
+                <button
+                  key={reason.reason}
+                  type="button"
+                  className="table-row compact button-row"
+                  onClick={() => setSelectedReason(reason.reason)}
+                >
+                  <span className="muted">{reason.reason}</span>
+                  <span>{reason.count}</span>
+                </button>
+              ))}
+            </div>
+            {selectedReasonDetail ? (
+              <div className="detail-panel">
+                <p className="row-title">{selectedReasonDetail.title}</p>
+                <p className="muted">{selectedReasonDetail.detail}</p>
+                <p className="muted">{selectedReasonDetail.mitigation}</p>
+              </div>
+            ) : (
+              <p className="muted">Select a reason to see details.</p>
+            )}
+          </section>
+          <section className="card">
             <h2>Accepted vs rejected</h2>
             <ResponsiveContainer width="100%" height={220}>
               <LineChart data={riskSeries}>
@@ -256,6 +347,9 @@ const AdminDashboardPage = () => {
           </div>
         </section>
       </section>
+      {showOnboarding ? (
+        <OnboardingOverlay role="admin" onDismiss={dismissOnboarding} />
+      ) : null}
     </main>
   );
 };

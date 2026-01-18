@@ -298,6 +298,33 @@ def test_admin_risk_requires_admin(client, app):
     assert allowed.status_code == 200
 
 
+def test_admin_summary_days_param(client, app):
+    with app.app_context():
+        _, _, admin = create_users()
+        admin_email = admin.email
+
+    admin_login = client.post(
+        "/api/auth/login",
+        json={"email": admin_email, "password": "pass"},
+    )
+    assert admin_login.status_code == 200
+    admin_token = admin_login.get_json()["access_token"]
+
+    summary = client.get(
+        "/api/admin/analytics/summary?days=7",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert summary.status_code == 200
+    payload = summary.get_json()
+    assert "totals" in payload
+
+    invalid = client.get(
+        "/api/admin/analytics/summary?days=bad",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert invalid.status_code == 400
+
+
 def test_partner_quality_requires_partner(client, app):
     with app.app_context():
         buyer, partner, _ = create_users()

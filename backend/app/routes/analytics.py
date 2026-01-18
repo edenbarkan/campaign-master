@@ -114,7 +114,13 @@ def partner_quality():
 @analytics_bp.route("/api/admin/analytics/summary", methods=["GET"])
 @roles_required("admin")
 def admin_summary():
-    daily = admin_daily_metrics()
+    days = request.args.get("days", 14)
+    try:
+        days = max(1, min(int(days), 90))
+    except (TypeError, ValueError):
+        return jsonify({"error": "invalid_days"}), 400
+
+    daily = admin_daily_metrics(days=days)
     spend_total = sum(item["spend"] for item in daily)
     earnings_total = sum(item["earnings"] for item in daily)
     profit_total = sum(item["profit"] for item in daily)

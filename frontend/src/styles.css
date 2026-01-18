@@ -71,6 +71,11 @@ h1 {
   font-size: 14px;
 }
 
+.helper-text {
+  font-size: 12px;
+  color: #6b7280;
+}
+
 input,
 select,
 textarea {
@@ -105,6 +110,18 @@ textarea {
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
+}
+
+.button:focus-visible,
+.toggle-button:focus-visible,
+button:focus-visible,
+a:focus-visible,
+summary:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid #0f766e;
+  outline-offset: 2px;
 }
 
 .button.primary {
@@ -159,6 +176,64 @@ textarea {
 
 .panel-body {
   margin-top: 16px;
+}
+
+.onboarding-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 50;
+}
+
+.onboarding-card {
+  background: #ffffff;
+  padding: 28px 32px;
+  border-radius: 20px;
+  max-width: 520px;
+  width: 100%;
+  box-shadow: 0 24px 50px rgba(15, 23, 42, 0.2);
+  display: grid;
+  gap: 12px;
+}
+
+.onboarding-card ul {
+  margin: 0;
+  padding-left: 18px;
+  color: #4b5563;
+  display: grid;
+  gap: 8px;
+}
+
+.view-toggle {
+  display: inline-flex;
+  gap: 8px;
+  padding: 6px;
+  border-radius: 999px;
+  background: #f3f4f6;
+  margin-top: 12px;
+}
+
+.toggle-button {
+  border: none;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: transparent;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.toggle-button.active {
+  background: #0f766e;
+  color: #ffffff;
+}
+
+.simple-cta {
+  margin: 12px 0 4px;
 }
 
 .lead {
@@ -273,6 +348,22 @@ textarea {
   padding: 8px 10px;
 }
 
+.button-row {
+  border: 1px solid #ececec;
+  background: #ffffff;
+  text-align: left;
+  width: 100%;
+  cursor: pointer;
+}
+
+.detail-panel {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px dashed #e5e7eb;
+  background: #f8fafc;
+}
+
 .badge {
   display: inline-flex;
   align-items: center;
@@ -301,6 +392,33 @@ textarea {
   color: #475569;
 }
 
+.badge.risky {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.badge.recovering {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+.badge.new {
+  background: #e0f2fe;
+  color: #075985;
+}
+
+.badge.stable {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.quality-alert {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
 .status-row {
   display: flex;
   gap: 12px;
@@ -311,6 +429,24 @@ textarea {
 .card.subtle {
   background: #f8fafc;
   border-style: dashed;
+}
+
+.guard-note {
+  margin-top: 10px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: #eef2ff;
+  border: 1px solid #e0e7ff;
+  font-size: 13px;
+  color: #1e1b4b;
+}
+
+.tldr-list {
+  margin: 10px 0 0 18px;
+  color: #4b5563;
+  font-size: 14px;
+  display: grid;
+  gap: 6px;
 }
 
 .score-legend {
@@ -353,6 +489,27 @@ textarea {
   border-radius: 16px;
   object-fit: cover;
   border: 1px solid #ececec;
+}
+
+.ad-placement {
+  display: grid;
+  gap: 12px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  padding: 12px;
+}
+
+.ad-placement-body {
+  display: grid;
+  gap: 6px;
+}
+
+.ad-domain {
+  font-size: 12px;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .ad-preview h3 {
