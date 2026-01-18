@@ -149,8 +149,8 @@ Always logout before switching roles.
 ## What changed / How to verify manually
 
 - Buyer: toggle Simple/Advanced tabs on the dashboard and confirm the hint text and advanced KPIs (budget left, max CPC, clicks) appear; open "How it works" and use the CTA links.
-- Partner: confirm the quality badge styling and tooltips, open "Get Ad" and verify filter tooltips plus "Record impression" / "Test click" tooltips; open "How it works" and try the template helper.
-- Admin: switch date presets, click a reject reason to open the detail panel, and open the "How it works" page.
+- Partner: confirm the quality badge styling and tooltips, open "Get Ad" and verify filter tooltips plus "Record impression" / "Test click" tooltips; confirm preview fallback renders if an image is blocked; open "How it works" and try the template helper or restart onboarding.
+- Admin: switch date presets, click a reject reason to open the detail panel, verify "Updated Xs ago" and refresh, and open the "How it works" page to restart onboarding.
 
 ## Reject penalty verification
 

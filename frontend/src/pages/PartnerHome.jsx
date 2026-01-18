@@ -20,11 +20,16 @@ const PartnerHome = () => {
   const [assignment, setAssignment] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [previewBlocked, setPreviewBlocked] = useState(false);
   const isAdvanced = viewMode === "advanced";
 
   useEffect(() => {
     safeStorage.set("partner_view_mode", viewMode);
   }, [viewMode]);
+
+  useEffect(() => {
+    setPreviewBlocked(false);
+  }, [assignment?.ad?.image_url]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -51,8 +56,8 @@ const PartnerHome = () => {
         const reason = payload.reason || "NO_ELIGIBLE_ADS";
         const message =
           reason === "FREQ_CAP"
-            ? "Frequency cap hit. Try again in a minute or change filters."
-            : "No fill available. Try adjusting category, geo, placement, or device.";
+            ? "Frequency cap is active. Try again in a minute or change filters."
+            : "No eligible ads for these filters. Try broader category, geo, placement, or device.";
         setError(message);
         setAssignment(null);
         return;
@@ -177,6 +182,14 @@ const PartnerHome = () => {
     ? qualityStates[breakdown.partner_quality_state] || null
     : null;
 
+  const showFallback = previewBlocked || !assignment?.ad?.image_url;
+  const fallbackTitle = previewBlocked
+    ? "Preview blocked by your browser"
+    : "Preview unavailable";
+  const fallbackNote = previewBlocked
+    ? "Tracking and scoring are unaffected. Use the fields below to place the ad."
+    : "Tracking and scoring are unaffected. Check the image URL if available.";
+
   return (
     <main className="page dashboard">
       <section className="panel">
@@ -256,12 +269,28 @@ const PartnerHome = () => {
             ) : (
               <div className="ad-preview">
                 <div className="ad-placement">
-                  <img src={assignment.ad.image_url} alt={assignment.ad.title} />
-                  <div className="ad-placement-body">
-                    <span className="ad-domain">{destinationDomain}</span>
-                    <h3>{assignment.ad.title}</h3>
-                    <p>{assignment.ad.body}</p>
-                  </div>
+                  {showFallback ? (
+                    <div className="ad-preview-fallback">
+                      <p className="row-title">{fallbackTitle}</p>
+                      <p className="muted">{fallbackNote}</p>
+                      <span className="ad-domain">{destinationDomain}</span>
+                      <h3>{assignment.ad.title}</h3>
+                      <p>{assignment.ad.body}</p>
+                    </div>
+                  ) : (
+                    <>
+                      <img
+                        src={assignment.ad.image_url}
+                        alt={assignment.ad.title}
+                        onError={() => setPreviewBlocked(true)}
+                      />
+                      <div className="ad-placement-body">
+                        <span className="ad-domain">{destinationDomain}</span>
+                        <h3>{assignment.ad.title}</h3>
+                        <p>{assignment.ad.body}</p>
+                      </div>
+                    </>
+                  )}
                 </div>
                 <div className="actions">
                   <button

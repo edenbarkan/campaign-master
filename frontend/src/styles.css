@@ -290,6 +290,14 @@ select:focus-visible {
   margin: 12px 0 4px;
 }
 
+.refresh-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
 .lead {
   font-size: 18px;
   color: #374151;
@@ -307,6 +315,12 @@ select:focus-visible {
   border-radius: 20px;
   padding: 22px 24px;
   border: 1px solid #ececec;
+}
+
+.empty-state {
+  display: grid;
+  gap: 12px;
+  padding: 12px 0;
 }
 
 .card h2 {
@@ -570,6 +584,15 @@ select:focus-visible {
   border: 1px solid #e5e7eb;
   border-radius: 18px;
   padding: 12px;
+}
+
+.ad-preview-fallback {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 14px;
+  background: #f8fafc;
+  border: 1px dashed #e2e8f0;
 }
 
 .ad-placement-body {

@@ -207,7 +207,7 @@ const BuyerHome = () => {
         <div className="grid">
           <section className="card">
             <h2>{editingId ? "Edit campaign" : "New campaign"}</h2>
-            <form className="form" onSubmit={handleSubmit}>
+            <form className="form" id="campaign-form" onSubmit={handleSubmit}>
               <label className="field">
                 <span>Name</span>
                 <input
@@ -362,7 +362,20 @@ const BuyerHome = () => {
             <h2>Campaigns</h2>
             {loading ? <p className="muted">Loading campaigns...</p> : null}
             {!loading && campaigns.length === 0 ? (
-              <p className="muted">No campaigns yet. Create the first one.</p>
+              <div className="empty-state">
+                <p className="muted">No campaigns yet. Start with budget + max CPC.</p>
+                <button
+                  className="button primary"
+                  type="button"
+                  onClick={() =>
+                    document.getElementById("campaign-form")?.scrollIntoView({
+                      behavior: "smooth"
+                    })
+                  }
+                >
+                  Create your first campaign
+                </button>
+              </div>
             ) : null}
             <div className="table">
               {campaigns.map((campaign) => (

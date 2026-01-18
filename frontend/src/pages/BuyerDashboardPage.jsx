@@ -23,21 +23,41 @@ const BuyerDashboardPage = () => {
   );
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
+  const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [tick, setTick] = useState(Date.now());
   const isAdvanced = viewMode === "advanced";
   const [showOnboarding, setShowOnboarding] = useState(() =>
     safeStorage.get("onboarding_buyer_dismissed", "0") !== "1"
   );
 
-  useEffect(() => {
+  const loadData = async () => {
     if (!token) return;
-    apiFetch("/buyer/analytics/summary", { token })
-      .then(setData)
-      .catch(() => setError("Unable to load buyer analytics."));
+    setIsRefreshing(true);
+    try {
+      const payload = await apiFetch("/buyer/analytics/summary", { token });
+      setData(payload);
+      setLastUpdatedAt(Date.now());
+      setError("");
+    } catch (err) {
+      setError("Unable to load buyer analytics.");
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
   }, [token]);
 
   useEffect(() => {
     safeStorage.set("buyer_view_mode", viewMode);
   }, [viewMode]);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => setTick(Date.now()), 1000);
+    return () => window.clearInterval(interval);
+  }, []);
 
   const dismissOnboarding = () => {
     safeStorage.set("onboarding_buyer_dismissed", "1");
@@ -57,6 +77,15 @@ const BuyerDashboardPage = () => {
   }
 
   const { daily, totals, campaigns, delivery_status: deliveryStatus } = data;
+  const updatedSeconds = lastUpdatedAt
+    ? Math.max(0, Math.floor((tick - lastUpdatedAt) / 1000))
+    : null;
+  const updatedLabel =
+    updatedSeconds === null
+      ? ""
+      : updatedSeconds < 60
+      ? `${updatedSeconds}s ago`
+      : `${Math.floor(updatedSeconds / 60)}m ago`;
   const totalBudgetLeft = (campaigns || []).reduce(
     (acc, campaign) => acc + Number(campaign.budget_remaining || 0),
     0
@@ -89,6 +118,19 @@ const BuyerDashboardPage = () => {
           </button>
         </div>
         <p className="toggle-hint">{UI_STRINGS.common.viewModeHint}</p>
+        <div className="refresh-row">
+          <span className="muted">
+            {lastUpdatedAt ? `${UI_STRINGS.common.lastUpdatedLabel} ${updatedLabel}` : ""}
+          </span>
+          <button
+            className="button ghost"
+            type="button"
+            onClick={loadData}
+            disabled={isRefreshing}
+          >
+            {isRefreshing ? "Refreshing..." : UI_STRINGS.common.refreshData}
+          </button>
+        </div>
         {deliveryStatus ? (
           <div className="status-row">
             <span className={`badge ${deliveryStatus.status.toLowerCase()}`}>
@@ -165,6 +207,14 @@ const BuyerDashboardPage = () => {
         ) : null}
         <section className="card">
           <h2>Campaign performance</h2>
+          {campaigns.length === 0 ? (
+            <div className="empty-state">
+              <p className="muted">No campaigns yet. Start with a budget and max CPC.</p>
+              <a className="button primary" href="/buyer/campaigns">
+                Create your first campaign
+              </a>
+            </div>
+          ) : null}
           <div className="table">
             {campaigns.map((campaign) => (
               <div className="table-row" key={campaign.id}>

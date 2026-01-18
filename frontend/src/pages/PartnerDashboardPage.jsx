@@ -24,27 +24,45 @@ const PartnerDashboardPage = () => {
   const [data, setData] = useState(null);
   const [quality, setQuality] = useState(null);
   const [error, setError] = useState("");
+  const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [tick, setTick] = useState(Date.now());
   const isAdvanced = viewMode === "advanced";
   const [showOnboarding, setShowOnboarding] = useState(() =>
     safeStorage.get("onboarding_partner_dismissed", "0") !== "1"
   );
 
-  useEffect(() => {
+  const loadData = async () => {
     if (!token) return;
-    Promise.all([
-      apiFetch("/partner/analytics/summary", { token }),
-      apiFetch("/partner/quality/summary", { token })
-    ])
-      .then(([summaryResponse, qualityResponse]) => {
-        setData(summaryResponse);
-        setQuality(qualityResponse);
-      })
-      .catch(() => setError("Unable to load partner analytics."));
+    setIsRefreshing(true);
+    try {
+      const [summaryResponse, qualityResponse] = await Promise.all([
+        apiFetch("/partner/analytics/summary", { token }),
+        apiFetch("/partner/quality/summary", { token })
+      ]);
+      setData(summaryResponse);
+      setQuality(qualityResponse);
+      setLastUpdatedAt(Date.now());
+      setError("");
+    } catch (err) {
+      setError("Unable to load partner analytics.");
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
   }, [token]);
 
   useEffect(() => {
     safeStorage.set("partner_view_mode", viewMode);
   }, [viewMode]);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => setTick(Date.now()), 1000);
+    return () => window.clearInterval(interval);
+  }, []);
 
   const dismissOnboarding = () => {
     safeStorage.set("onboarding_partner_dismissed", "1");
@@ -173,6 +191,15 @@ const PartnerDashboardPage = () => {
         ["Total score", latestBreakdown.total]
       ]
     : [];
+  const updatedSeconds = lastUpdatedAt
+    ? Math.max(0, Math.floor((tick - lastUpdatedAt) / 1000))
+    : null;
+  const updatedLabel =
+    updatedSeconds === null
+      ? ""
+      : updatedSeconds < 60
+      ? `${updatedSeconds}s ago`
+      : `${Math.floor(updatedSeconds / 60)}m ago`;
 
   return (
     <main className="page dashboard">
@@ -197,6 +224,19 @@ const PartnerDashboardPage = () => {
           </button>
         </div>
         <p className="toggle-hint">{UI_STRINGS.common.viewModeHint}</p>
+        <div className="refresh-row">
+          <span className="muted">
+            {lastUpdatedAt ? `${UI_STRINGS.common.lastUpdatedLabel} ${updatedLabel}` : ""}
+          </span>
+          <button
+            className="button ghost"
+            type="button"
+            onClick={loadData}
+            disabled={isRefreshing}
+          >
+            {isRefreshing ? "Refreshing..." : UI_STRINGS.common.refreshData}
+          </button>
+        </div>
         <div className="metrics">
           <div className="metric-card">
             <p>Earnings</p>
@@ -263,6 +303,14 @@ const PartnerDashboardPage = () => {
               {qualityAlert.label}
             </span>
             <span className="muted">{qualityAlert.note}</span>
+          </div>
+        ) : null}
+        {totalRequests === 0 ? (
+          <div className="empty-state">
+            <p className="muted">No ad requests yet. Try broad filters first.</p>
+            <a className="button primary" href="/partner/get-ad">
+              {UI_STRINGS.partner.getAdCta}
+            </a>
           </div>
         ) : null}
         {!isAdvanced ? (

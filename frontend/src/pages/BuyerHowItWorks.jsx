@@ -1,12 +1,25 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 
 import RoleHeader from "../components/RoleHeader.jsx";
+import OnboardingOverlay from "../components/OnboardingOverlay.jsx";
 import { HOW_IT_WORKS, GLOSSARY } from "../lib/helpContent";
+import { safeStorage } from "../lib/storage";
 import { UI_STRINGS } from "../lib/strings";
 
 const BuyerHowItWorks = () => {
   const content = HOW_IT_WORKS.buyer;
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  const restartOnboarding = () => {
+    safeStorage.set("onboarding_buyer_dismissed", "0");
+    setShowOnboarding(true);
+  };
+
+  const dismissOnboarding = () => {
+    safeStorage.set("onboarding_buyer_dismissed", "1");
+    setShowOnboarding(false);
+  };
 
   return (
     <main className="page dashboard">
@@ -50,6 +63,9 @@ const BuyerHowItWorks = () => {
             <Link className="button ghost" to="/buyer/dashboard">
               Go to Dashboard
             </Link>
+            <button className="button ghost" type="button" onClick={restartOnboarding}>
+              {UI_STRINGS.common.restartOnboarding}
+            </button>
           </div>
         </section>
         <section className="card help-section">
@@ -79,6 +95,9 @@ const BuyerHowItWorks = () => {
           </div>
         </section>
       </section>
+      {showOnboarding ? (
+        <OnboardingOverlay role="buyer" onDismiss={dismissOnboarding} />
+      ) : null}
     </main>
   );
 };

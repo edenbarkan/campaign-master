@@ -7,6 +7,8 @@ export const UI_STRINGS = {
       "Stabilizes delivery quality — never adds hidden costs. Ranking only.",
     scoringDisclaimer: "Scoring affects ranking only — billing is unchanged.",
     viewModeHint: "Simple shows essentials. Advanced shows full details.",
+    refreshData: "Refresh data",
+    lastUpdatedLabel: "Updated",
     recordImpressionTooltip: "Counts a single view for analytics. No billing impact.",
     testClickTooltip: "Opens the tracking link. Click billing follows normal rules.",
     rejectSignalTooltip: "Partner-derived quality signal; not tied to a single ad.",
@@ -14,7 +16,8 @@ export const UI_STRINGS = {
     statusHelper: "Status affects delivery. Paused campaigns will not serve.",
     imageUrlHelper: "Use a full https:// image URL.",
     destinationUrlHelper: "Use the final landing page URL.",
-    howItWorksLabel: "How it works"
+    howItWorksLabel: "How it works",
+    restartOnboarding: "Restart onboarding"
   },
   partner: {
     welcomeSubtitle: "Request a fresh ad and start earning.",
@@ -36,25 +39,25 @@ export const UI_STRINGS = {
     partner: {
       title: "Partner quick start",
       steps: [
-        "Request an ad and use the tracking link or embed snippet.",
-        "Record impressions to keep CTR accurate.",
-        "Quality matters — avoid rapid refreshes and duplicate clicks."
+        "Get an ad and embed the tracking link (filters are optional).",
+        "Track clicks safely — only accepted clicks pay.",
+        "Quality stays stable when you avoid duplicate clicks."
       ]
     },
     buyer: {
       title: "Buyer quick start",
       steps: [
         "Create a campaign with budget and max CPC.",
-        "Add ads with an image URL and destination URL.",
-        "Billing happens only on accepted clicks."
+        "Add ads with title, image, and destination URL.",
+        "Delivery depends on supply; billing only on accepted clicks."
       ]
     },
     admin: {
       title: "Admin quick start",
       steps: [
-        "Review market health: fill, delivery, and take rate.",
-        "Monitor risk reasons for rejected clicks.",
-        "Use date ranges to interpret trends."
+        "Review marketplace health at a glance.",
+        "Open reject reasons for meaning and mitigation.",
+        "Good looks like steady fill and stable rejects."
       ]
     }
   }

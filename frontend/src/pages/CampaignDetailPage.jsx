@@ -122,7 +122,7 @@ const CampaignDetailPage = () => {
         <div className="grid">
           <section className="card">
             <h2>{editingId ? "Edit ad" : "New ad"}</h2>
-            <form className="form" onSubmit={handleSubmit}>
+            <form className="form" id="ad-form" onSubmit={handleSubmit}>
               <label className="field">
                 <span>Headline</span>
                 <input
@@ -192,7 +192,20 @@ const CampaignDetailPage = () => {
             <h2>Ads</h2>
             {loading ? <p className="muted">Loading ads...</p> : null}
             {!loading && ads.length === 0 ? (
-              <p className="muted">No ads yet. Add your first creative.</p>
+              <div className="empty-state">
+                <p className="muted">No ads yet. Add your first creative.</p>
+                <button
+                  className="button primary"
+                  type="button"
+                  onClick={() =>
+                    document.getElementById("ad-form")?.scrollIntoView({
+                      behavior: "smooth"
+                    })
+                  }
+                >
+                  Add your first ad
+                </button>
+              </div>
             ) : null}
             <div className="table">
               {ads.map((ad) => (

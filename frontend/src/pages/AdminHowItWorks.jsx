@@ -1,12 +1,25 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 
 import RoleHeader from "../components/RoleHeader.jsx";
+import OnboardingOverlay from "../components/OnboardingOverlay.jsx";
 import { HOW_IT_WORKS, GLOSSARY } from "../lib/helpContent";
+import { safeStorage } from "../lib/storage";
 import { UI_STRINGS } from "../lib/strings";
 
 const AdminHowItWorks = () => {
   const content = HOW_IT_WORKS.admin;
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  const restartOnboarding = () => {
+    safeStorage.set("onboarding_admin_dismissed", "0");
+    setShowOnboarding(true);
+  };
+
+  const dismissOnboarding = () => {
+    safeStorage.set("onboarding_admin_dismissed", "1");
+    setShowOnboarding(false);
+  };
 
   return (
     <main className="page dashboard">
@@ -47,6 +60,9 @@ const AdminHowItWorks = () => {
             <Link className="button primary" to="/admin/dashboard">
               Go to Admin Dashboard
             </Link>
+            <button className="button ghost" type="button" onClick={restartOnboarding}>
+              {UI_STRINGS.common.restartOnboarding}
+            </button>
           </div>
         </section>
         <section className="card help-section">
@@ -76,6 +92,9 @@ const AdminHowItWorks = () => {
           </div>
         </section>
       </section>
+      {showOnboarding ? (
+        <OnboardingOverlay role="admin" onDismiss={dismissOnboarding} />
+      ) : null}
     </main>
   );
 };
