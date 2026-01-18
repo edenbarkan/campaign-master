@@ -9,6 +9,10 @@ export const UI_STRINGS = {
     viewModeHint: "Simple shows essentials. Advanced shows full details.",
     refreshData: "Refresh data",
     lastUpdatedLabel: "Updated",
+    ctrTooltip: "CTR = accepted clicks / accepted impressions. Display only; billing unchanged.",
+    epcTooltip: "EPC = earnings per accepted click. Display only; billing unchanged.",
+    fillRateTooltip: "Fill rate = filled requests / total requests. Display only; billing unchanged.",
+    costEfficiencyTooltip: "Cost efficiency = clicks per $ spend. Display only; billing unchanged.",
     recordImpressionTooltip: "Counts a single view for analytics. No billing impact.",
     testClickTooltip: "Opens the tracking link. Click billing follows normal rules.",
     rejectSignalTooltip: "Partner-derived quality signal; not tied to a single ad.",
@@ -23,10 +27,10 @@ export const UI_STRINGS = {
     welcomeSubtitle: "Request a fresh ad and start earning.",
     dashboardSubtitle: "Tracking earnings and click quality.",
     getAdCta: "Get a fresh ad",
-    filterCategoryTooltip: "Optional targeting hint for campaign category.",
-    filterGeoTooltip: "Optional location hint (country or region).",
-    filterPlacementTooltip: "Optional placement label (e.g., sidebar, inline).",
-    filterDeviceTooltip: "Optional device hint (mobile, desktop)."
+    filterCategoryTooltip: "Examples: Fitness, Finance. Optional targeting hint.",
+    filterGeoTooltip: "Examples: US, UK. Optional location hint.",
+    filterPlacementTooltip: "Examples: Sidebar, Feed. Optional placement hint.",
+    filterDeviceTooltip: "Examples: Mobile, Desktop. Optional device hint."
   },
   buyer: {
     dashboardSubtitle: "Tracking spend, clicks, and efficiency.",

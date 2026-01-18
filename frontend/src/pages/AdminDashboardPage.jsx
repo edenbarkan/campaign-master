@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import {
   CartesianGrid,
+  Legend,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -12,7 +13,6 @@ import {
 import RoleHeader from "../components/RoleHeader.jsx";
 import { useAuth } from "../contexts/AuthContext";
 import { apiFetch } from "../lib/api";
-import OnboardingOverlay from "../components/OnboardingOverlay.jsx";
 import { safeStorage } from "../lib/storage";
 import { UI_STRINGS } from "../lib/strings";
 
@@ -27,8 +27,8 @@ const AdminDashboardPage = () => {
   const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [tick, setTick] = useState(Date.now());
-  const [showOnboarding, setShowOnboarding] = useState(() =>
-    safeStorage.get("onboarding_admin_dismissed", "0") !== "1"
+  const [showNudge, setShowNudge] = useState(() =>
+    safeStorage.get("onboarding_nudge_admin_dismissed", "0") !== "1"
   );
   const [rangeDays, setRangeDays] = useState(30);
   const [selectedReason, setSelectedReason] = useState(null);
@@ -76,9 +76,9 @@ const AdminDashboardPage = () => {
     loadData();
   }, [token, rangeDays]);
 
-  const dismissOnboarding = () => {
-    safeStorage.set("onboarding_admin_dismissed", "1");
-    setShowOnboarding(false);
+  const dismissNudge = () => {
+    safeStorage.set("onboarding_nudge_admin_dismissed", "1");
+    setShowNudge(false);
   };
 
   useEffect(() => {
@@ -187,6 +187,19 @@ const AdminDashboardPage = () => {
             {isRefreshing ? "Refreshing..." : UI_STRINGS.common.refreshData}
           </button>
         </div>
+        {showNudge ? (
+          <div className="nudge-banner">
+            <div>
+              <p className="row-title">New here?</p>
+              <p className="muted">Start with marketplace health and risk trends.</p>
+            </div>
+            <div className="actions">
+              <button className="button ghost small" type="button" onClick={dismissNudge}>
+                Dismiss
+              </button>
+            </div>
+          </div>
+        ) : null}
         <div className="metrics">
           <div className="metric-card">
             <p>Total spend</p>
@@ -217,12 +230,19 @@ const AdminDashboardPage = () => {
             <ResponsiveContainer width="100%" height={220}>
               <LineChart data={series}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
+                <XAxis dataKey="date" label={{ value: "Date", position: "insideBottom", offset: -6 }} />
+                <YAxis label={{ value: "USD", angle: -90, position: "insideLeft" }} />
                 <Tooltip />
-                <Line type="monotone" dataKey="spend" stroke="#0f766e" strokeWidth={2} />
-                <Line type="monotone" dataKey="earnings" stroke="#9333ea" strokeWidth={2} />
-                <Line type="monotone" dataKey="profit" stroke="#16a34a" strokeWidth={2} />
+                <Line type="monotone" dataKey="spend" name="Spend ($)" stroke="#0f766e" strokeWidth={2} />
+                <Line
+                  type="monotone"
+                  dataKey="earnings"
+                  name="Earnings ($)"
+                  stroke="#9333ea"
+                  strokeWidth={2}
+                />
+                <Line type="monotone" dataKey="profit" name="Profit ($)" stroke="#16a34a" strokeWidth={2} />
+                <Legend />
               </LineChart>
             </ResponsiveContainer>
           </section>
@@ -233,7 +253,7 @@ const AdminDashboardPage = () => {
               <h2>Marketplace health</h2>
               <div className="metrics compact">
                 <div className="metric-card">
-                  <p>Fill rate</p>
+                  <p title={UI_STRINGS.common.fillRateTooltip}>Fill rate</p>
                   <h3>{marketplaceFillRate.toFixed(1)}%</h3>
                 </div>
                 <div className="metric-card">
@@ -381,11 +401,24 @@ const AdminDashboardPage = () => {
             <ResponsiveContainer width="100%" height={220}>
               <LineChart data={riskSeries}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
+                <XAxis dataKey="date" label={{ value: "Date", position: "insideBottom", offset: -6 }} />
+                <YAxis label={{ value: "Clicks", angle: -90, position: "insideLeft" }} />
                 <Tooltip />
-                <Line type="monotone" dataKey="accepted" stroke="#2563eb" strokeWidth={2} />
-                <Line type="monotone" dataKey="rejected" stroke="#dc2626" strokeWidth={2} />
+                <Line
+                  type="monotone"
+                  dataKey="accepted"
+                  name="Accepted"
+                  stroke="#2563eb"
+                  strokeWidth={2}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="rejected"
+                  name="Rejected"
+                  stroke="#dc2626"
+                  strokeWidth={2}
+                />
+                <Legend />
               </LineChart>
             </ResponsiveContainer>
           </section>
@@ -409,9 +442,6 @@ const AdminDashboardPage = () => {
           </div>
         </section>
       </section>
-      {showOnboarding ? (
-        <OnboardingOverlay role="admin" onDismiss={dismissOnboarding} />
-      ) : null}
     </main>
   );
 };

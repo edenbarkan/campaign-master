@@ -21,6 +21,7 @@ const PartnerHome = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [previewBlocked, setPreviewBlocked] = useState(false);
+  const [snippetCopied, setSnippetCopied] = useState(false);
   const isAdvanced = viewMode === "advanced";
 
   useEffect(() => {
@@ -90,6 +91,21 @@ const PartnerHome = () => {
   const embedSnippet = assignment
     ? `<a href="${trackingUrl}" target="_blank" rel="noreferrer"><img src="${assignment.ad.image_url}" alt="${assignment.ad.title}" /></a>`
     : "";
+
+  const copySnippet = async () => {
+    if (!embedSnippet) return;
+    if (!navigator?.clipboard) {
+      setError("Copy is not supported in this browser.");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(embedSnippet);
+      setSnippetCopied(true);
+      window.setTimeout(() => setSnippetCopied(false), 1500);
+    } catch (err) {
+      setError("Unable to copy the embed snippet.");
+    }
+  };
 
   const breakdown = assignment?.score_breakdown || null;
   const formatNumber = (value, digits = 2) => {
@@ -187,8 +203,8 @@ const PartnerHome = () => {
     ? "Preview blocked by your browser"
     : "Preview unavailable";
   const fallbackNote = previewBlocked
-    ? "Tracking and scoring are unaffected. Use the fields below to place the ad."
-    : "Tracking and scoring are unaffected. Check the image URL if available.";
+    ? "This does NOT affect delivery or tracking. Use the fields below to place the ad."
+    : "Delivery and tracking are unaffected. Check the image URL if available.";
 
   return (
     <main className="page dashboard">
@@ -314,6 +330,9 @@ const PartnerHome = () => {
                 <div className="snippet">
                   <p className="muted">Embed snippet</p>
                   <textarea readOnly value={embedSnippet} rows={3} />
+                  <button className="button ghost" type="button" onClick={copySnippet}>
+                    {snippetCopied ? "Copied" : "Copy snippet"}
+                  </button>
                 </div>
                 <div className="card subtle">
                   <h3>Why this ad?</h3>

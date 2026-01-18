@@ -1,8 +1,7 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import RoleHeader from "../components/RoleHeader.jsx";
-import OnboardingOverlay from "../components/OnboardingOverlay.jsx";
 import { HOW_IT_WORKS, GLOSSARY } from "../lib/helpContent";
 import { safeStorage } from "../lib/storage";
 import { UI_STRINGS } from "../lib/strings";
@@ -10,7 +9,7 @@ import { UI_STRINGS } from "../lib/strings";
 const PartnerHowItWorks = () => {
   const content = HOW_IT_WORKS.partner;
   const [copied, setCopied] = useState(false);
-  const [showOnboarding, setShowOnboarding] = useState(false);
+  const navigate = useNavigate();
   const trackingTemplate =
     '<a href="https://your-site.com/t/<code>" target="_blank" rel="noreferrer">Sponsored</a>';
 
@@ -23,13 +22,8 @@ const PartnerHowItWorks = () => {
   };
 
   const restartOnboarding = () => {
-    safeStorage.set("onboarding_partner_dismissed", "0");
-    setShowOnboarding(true);
-  };
-
-  const dismissOnboarding = () => {
-    safeStorage.set("onboarding_partner_dismissed", "1");
-    setShowOnboarding(false);
+    safeStorage.set("onboarding_nudge_partner_dismissed", "0");
+    navigate("/partner/dashboard");
   };
 
   return (
@@ -118,9 +112,6 @@ const PartnerHowItWorks = () => {
           </div>
         </section>
       </section>
-      {showOnboarding ? (
-        <OnboardingOverlay role="partner" onDismiss={dismissOnboarding} />
-      ) : null}
     </main>
   );
 };

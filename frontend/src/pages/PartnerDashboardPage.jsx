@@ -12,7 +12,6 @@ import {
 import RoleHeader from "../components/RoleHeader.jsx";
 import { useAuth } from "../contexts/AuthContext";
 import { apiFetch } from "../lib/api";
-import OnboardingOverlay from "../components/OnboardingOverlay.jsx";
 import { safeStorage } from "../lib/storage";
 import { UI_STRINGS } from "../lib/strings";
 
@@ -28,8 +27,8 @@ const PartnerDashboardPage = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [tick, setTick] = useState(Date.now());
   const isAdvanced = viewMode === "advanced";
-  const [showOnboarding, setShowOnboarding] = useState(() =>
-    safeStorage.get("onboarding_partner_dismissed", "0") !== "1"
+  const [showNudge, setShowNudge] = useState(() =>
+    safeStorage.get("onboarding_nudge_partner_dismissed", "0") !== "1"
   );
 
   const loadData = async () => {
@@ -64,9 +63,9 @@ const PartnerDashboardPage = () => {
     return () => window.clearInterval(interval);
   }, []);
 
-  const dismissOnboarding = () => {
-    safeStorage.set("onboarding_partner_dismissed", "1");
-    setShowOnboarding(false);
+  const dismissNudge = () => {
+    safeStorage.set("onboarding_nudge_partner_dismissed", "1");
+    setShowNudge(false);
   };
 
   if (!data || !quality) {
@@ -237,13 +236,29 @@ const PartnerDashboardPage = () => {
             {isRefreshing ? "Refreshing..." : UI_STRINGS.common.refreshData}
           </button>
         </div>
+        {showNudge ? (
+          <div className="nudge-banner">
+            <div>
+              <p className="row-title">New here?</p>
+              <p className="muted">Get a fresh ad and test placement.</p>
+            </div>
+            <div className="actions">
+              <a className="button primary" href="/partner/get-ad">
+                {UI_STRINGS.partner.getAdCta}
+              </a>
+              <button className="button ghost small" type="button" onClick={dismissNudge}>
+                Dismiss
+              </button>
+            </div>
+          </div>
+        ) : null}
         <div className="metrics">
           <div className="metric-card">
             <p>Earnings</p>
             <h3>${totals.earnings.toFixed(2)}</h3>
           </div>
           <div className="metric-card">
-            <p>CTR</p>
+            <p title={UI_STRINGS.common.ctrTooltip}>CTR</p>
             <h3>{ctr.toFixed(2)}%</h3>
           </div>
           <div className="metric-card">
@@ -257,7 +272,7 @@ const PartnerDashboardPage = () => {
             )}
           </div>
           <div className="metric-card">
-            <p>Fill rate</p>
+            <p title={UI_STRINGS.common.fillRateTooltip}>Fill rate</p>
             <h3>{(fillRate * 100).toFixed(1)}%</h3>
           </div>
           {isAdvanced ? (
@@ -267,7 +282,7 @@ const PartnerDashboardPage = () => {
                 <h3>{totals.clicks}</h3>
               </div>
               <div className="metric-card">
-                <p>EPC</p>
+                <p title={UI_STRINGS.common.epcTooltip}>EPC</p>
                 <h3>${totals.epc.toFixed(2)}</h3>
               </div>
               <div className="metric-card">
@@ -486,9 +501,6 @@ const PartnerDashboardPage = () => {
           </section>
         ) : null}
       </section>
-      {showOnboarding ? (
-        <OnboardingOverlay role="partner" onDismiss={dismissOnboarding} />
-      ) : null}
     </main>
   );
 };

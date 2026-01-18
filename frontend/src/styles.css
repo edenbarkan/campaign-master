@@ -147,6 +147,11 @@ select:focus-visible {
   color: #1f2937;
 }
 
+.button.small {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
 .button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
@@ -323,6 +328,31 @@ select:focus-visible {
   padding: 12px 0;
 }
 
+.toast {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #ecfdf3;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+  margin-top: 12px;
+}
+
+.nudge-banner {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  margin: 12px 0;
+  align-items: center;
+}
+
 .card h2 {
   margin: 0 0 16px;
   font-size: 20px;
@@ -483,6 +513,11 @@ select:focus-visible {
 .badge.stable {
   background: #dcfce7;
   color: #166534;
+}
+
+.badge.not_serving {
+  background: #e2e8f0;
+  color: #475569;
 }
 
 .help-actions {

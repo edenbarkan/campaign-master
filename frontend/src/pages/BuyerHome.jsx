@@ -42,6 +42,7 @@ const BuyerHome = () => {
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [toast, setToast] = useState(null);
   const [platformFeePercent, setPlatformFeePercent] = useState(30);
   const maxCpcValue = Number(form.max_cpc);
   const budgetTotalValue = Number(form.budget_total);
@@ -143,6 +144,10 @@ const BuyerHome = () => {
         if (typeof response.campaign?.platform_fee_percent === "number") {
           setPlatformFeePercent(response.campaign.platform_fee_percent);
         }
+        setToast({
+          message: "Campaign created.",
+          campaignId: response.campaign?.id
+        });
       }
       setForm(emptyForm);
       setEditingId(null);
@@ -185,6 +190,21 @@ const BuyerHome = () => {
           title={`Hello, ${user?.email}`}
           subtitle={UI_STRINGS.buyer.launchSubtitle}
         />
+        {toast ? (
+          <div className="toast">
+            <span>{toast.message}</span>
+            <div className="actions">
+              {toast.campaignId ? (
+                <Link className="button ghost small" to={`/buyer/campaigns/${toast.campaignId}`}>
+                  View campaign
+                </Link>
+              ) : null}
+              <button className="button ghost small" type="button" onClick={() => setToast(null)}>
+                Dismiss
+              </button>
+            </div>
+          </div>
+        ) : null}
         <div className="view-toggle tabs" role="group" aria-label="Buyer view mode">
           <button
             type="button"
@@ -389,8 +409,16 @@ const BuyerHome = () => {
                         : ""}
                     </p>
                     {campaign.delivery_status ? (
-                      <span className={`badge ${campaign.delivery_status.toLowerCase()}`}>
-                        {campaign.delivery_status.replace("_", " ")}
+                      <span
+                        className={`badge ${
+                          Number(campaign.budget_spent || 0) === 0
+                            ? "not_serving"
+                            : campaign.delivery_status.toLowerCase()
+                        }`}
+                      >
+                        {Number(campaign.budget_spent || 0) === 0
+                          ? "Not serving yet"
+                          : campaign.delivery_status.replace("_", " ")}
                       </span>
                     ) : null}
                   </div>

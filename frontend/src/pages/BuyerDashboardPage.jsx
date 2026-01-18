@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import {
   CartesianGrid,
+  Legend,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -12,7 +13,6 @@ import {
 import RoleHeader from "../components/RoleHeader.jsx";
 import { useAuth } from "../contexts/AuthContext";
 import { apiFetch } from "../lib/api";
-import OnboardingOverlay from "../components/OnboardingOverlay.jsx";
 import { safeStorage } from "../lib/storage";
 import { UI_STRINGS } from "../lib/strings";
 
@@ -27,8 +27,8 @@ const BuyerDashboardPage = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [tick, setTick] = useState(Date.now());
   const isAdvanced = viewMode === "advanced";
-  const [showOnboarding, setShowOnboarding] = useState(() =>
-    safeStorage.get("onboarding_buyer_dismissed", "0") !== "1"
+  const [showNudge, setShowNudge] = useState(() =>
+    safeStorage.get("onboarding_nudge_buyer_dismissed", "0") !== "1"
   );
 
   const loadData = async () => {
@@ -59,9 +59,9 @@ const BuyerDashboardPage = () => {
     return () => window.clearInterval(interval);
   }, []);
 
-  const dismissOnboarding = () => {
-    safeStorage.set("onboarding_buyer_dismissed", "1");
-    setShowOnboarding(false);
+  const dismissNudge = () => {
+    safeStorage.set("onboarding_nudge_buyer_dismissed", "1");
+    setShowNudge(false);
   };
 
   if (!data) {
@@ -77,6 +77,9 @@ const BuyerDashboardPage = () => {
   }
 
   const { daily, totals, campaigns, delivery_status: deliveryStatus } = data;
+  const spendValue = Number(totals.spend || 0);
+  const effectiveCpcValue = Number(totals.effective_cpc || 0);
+  const costEfficiencyValue = Number(totals.cost_efficiency || 0);
   const updatedSeconds = lastUpdatedAt
     ? Math.max(0, Math.floor((tick - lastUpdatedAt) / 1000))
     : null;
@@ -94,6 +97,8 @@ const BuyerDashboardPage = () => {
     const value = Number(campaign.max_cpc ?? campaign.buyer_cpc ?? 0);
     return value > acc ? value : acc;
   }, 0);
+  const maxCpcDisplay =
+    maxCpcValue > 0 ? `$${maxCpcValue.toFixed(2)}` : "— (per campaign)";
 
   return (
     <main className="page dashboard">
@@ -131,10 +136,32 @@ const BuyerDashboardPage = () => {
             {isRefreshing ? "Refreshing..." : UI_STRINGS.common.refreshData}
           </button>
         </div>
+        {showNudge ? (
+          <div className="nudge-banner">
+            <div>
+              <p className="row-title">New here?</p>
+              <p className="muted">Start with your first campaign.</p>
+            </div>
+            <div className="actions">
+              <a className="button primary" href="/buyer/campaigns">
+                Create your first campaign
+              </a>
+              <button className="button ghost small" type="button" onClick={dismissNudge}>
+                Dismiss
+              </button>
+            </div>
+          </div>
+        ) : null}
         {deliveryStatus ? (
           <div className="status-row">
-            <span className={`badge ${deliveryStatus.status.toLowerCase()}`}>
-              {deliveryStatus.status.replace("_", " ")}
+            <span
+              className={`badge ${
+                spendValue === 0 ? "not_serving" : deliveryStatus.status.toLowerCase()
+              }`}
+            >
+              {spendValue === 0
+                ? "Not serving yet"
+                : deliveryStatus.status.replace("_", " ")}
             </span>
             {deliveryStatus.note ? (
               <span className="muted">{deliveryStatus.note}</span>
@@ -144,15 +171,15 @@ const BuyerDashboardPage = () => {
         <div className="metrics">
           <div className="metric-card">
             <p>Spend</p>
-            <h3>${totals.spend.toFixed(2)}</h3>
+            <h3>${spendValue.toFixed(2)}</h3>
           </div>
           <div className="metric-card">
             <p>Effective CPC</p>
-            <h3>${totals.effective_cpc.toFixed(2)}</h3>
+            <h3>${effectiveCpcValue.toFixed(2)}</h3>
           </div>
           {deliveryStatus ? (
             <div className="metric-card">
-              <p>Fill rate</p>
+              <p title={UI_STRINGS.common.fillRateTooltip}>Fill rate</p>
               <h3>{(deliveryStatus.fill_rate * 100).toFixed(1)}%</h3>
             </div>
           ) : null}
@@ -168,11 +195,11 @@ const BuyerDashboardPage = () => {
               </div>
               <div className="metric-card">
                 <p>Max CPC</p>
-                <h3>${maxCpcValue.toFixed(2)}</h3>
+                <h3>{maxCpcDisplay}</h3>
               </div>
               <div className="metric-card">
-                <p>Cost efficiency</p>
-                <h3>{totals.cost_efficiency.toFixed(2)} clicks/$</h3>
+                <p title={UI_STRINGS.common.costEfficiencyTooltip}>Cost efficiency</p>
+                <h3>{costEfficiencyValue.toFixed(2)} clicks/$</h3>
               </div>
             </>
           ) : null}
@@ -184,10 +211,17 @@ const BuyerDashboardPage = () => {
               <ResponsiveContainer width="100%" height={220}>
                 <LineChart data={daily}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
+                  <XAxis dataKey="date" label={{ value: "Date", position: "insideBottom", offset: -6 }} />
+                  <YAxis label={{ value: "Spend ($)", angle: -90, position: "insideLeft" }} />
                   <Tooltip />
-                  <Line type="monotone" dataKey="spend" stroke="#0f766e" strokeWidth={2} />
+                  <Line
+                    type="monotone"
+                    dataKey="spend"
+                    name="Spend ($)"
+                    stroke="#0f766e"
+                    strokeWidth={2}
+                  />
+                  <Legend />
                 </LineChart>
               </ResponsiveContainer>
             </section>
@@ -196,10 +230,17 @@ const BuyerDashboardPage = () => {
               <ResponsiveContainer width="100%" height={220}>
                 <LineChart data={daily}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
+                  <XAxis dataKey="date" label={{ value: "Date", position: "insideBottom", offset: -6 }} />
+                  <YAxis label={{ value: "Clicks", angle: -90, position: "insideLeft" }} />
                   <Tooltip />
-                  <Line type="monotone" dataKey="clicks" stroke="#2563eb" strokeWidth={2} />
+                  <Line
+                    type="monotone"
+                    dataKey="clicks"
+                    name="Clicks"
+                    stroke="#2563eb"
+                    strokeWidth={2}
+                  />
+                  <Legend />
                 </LineChart>
               </ResponsiveContainer>
             </section>
@@ -248,9 +289,6 @@ const BuyerDashboardPage = () => {
           </div>
         </section>
       </section>
-      {showOnboarding ? (
-        <OnboardingOverlay role="buyer" onDismiss={dismissOnboarding} />
-      ) : null}
     </main>
   );
 };

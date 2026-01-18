@@ -1,24 +1,18 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React from "react";
+import { Link, useNavigate } from "react-router-dom";
 
 import RoleHeader from "../components/RoleHeader.jsx";
-import OnboardingOverlay from "../components/OnboardingOverlay.jsx";
 import { HOW_IT_WORKS, GLOSSARY } from "../lib/helpContent";
 import { safeStorage } from "../lib/storage";
 import { UI_STRINGS } from "../lib/strings";
 
 const BuyerHowItWorks = () => {
   const content = HOW_IT_WORKS.buyer;
-  const [showOnboarding, setShowOnboarding] = useState(false);
+  const navigate = useNavigate();
 
   const restartOnboarding = () => {
-    safeStorage.set("onboarding_buyer_dismissed", "0");
-    setShowOnboarding(true);
-  };
-
-  const dismissOnboarding = () => {
-    safeStorage.set("onboarding_buyer_dismissed", "1");
-    setShowOnboarding(false);
+    safeStorage.set("onboarding_nudge_buyer_dismissed", "0");
+    navigate("/buyer/dashboard");
   };
 
   return (
@@ -95,9 +89,6 @@ const BuyerHowItWorks = () => {
           </div>
         </section>
       </section>
-      {showOnboarding ? (
-        <OnboardingOverlay role="buyer" onDismiss={dismissOnboarding} />
-      ) : null}
     </main>
   );
 };

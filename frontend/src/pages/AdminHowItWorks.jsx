@@ -1,24 +1,18 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React from "react";
+import { Link, useNavigate } from "react-router-dom";
 
 import RoleHeader from "../components/RoleHeader.jsx";
-import OnboardingOverlay from "../components/OnboardingOverlay.jsx";
 import { HOW_IT_WORKS, GLOSSARY } from "../lib/helpContent";
 import { safeStorage } from "../lib/storage";
 import { UI_STRINGS } from "../lib/strings";
 
 const AdminHowItWorks = () => {
   const content = HOW_IT_WORKS.admin;
-  const [showOnboarding, setShowOnboarding] = useState(false);
+  const navigate = useNavigate();
 
   const restartOnboarding = () => {
-    safeStorage.set("onboarding_admin_dismissed", "0");
-    setShowOnboarding(true);
-  };
-
-  const dismissOnboarding = () => {
-    safeStorage.set("onboarding_admin_dismissed", "1");
-    setShowOnboarding(false);
+    safeStorage.set("onboarding_nudge_admin_dismissed", "0");
+    navigate("/admin/dashboard");
   };
 
   return (
@@ -92,9 +86,6 @@ const AdminHowItWorks = () => {
           </div>
         </section>
       </section>
-      {showOnboarding ? (
-        <OnboardingOverlay role="admin" onDismiss={dismissOnboarding} />
-      ) : null}
     </main>
   );
 };
