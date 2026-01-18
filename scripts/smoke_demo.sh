@@ -100,6 +100,8 @@ explanation=$(echo "$ad_json" | json_get '.explanation')
 score_profit=$(echo "$ad_json" | json_get '.score_breakdown.profit')
 score_reject_rate=$(echo "$ad_json" | json_get '.score_breakdown.partner_reject_rate')
 score_reject_penalty=$(echo "$ad_json" | json_get '.score_breakdown.partner_reject_penalty')
+score_alpha=$(echo "$ad_json" | json_get '.score_breakdown.alpha_profit')
+score_quality_state=$(echo "$ad_json" | json_get '.score_breakdown.partner_quality_state')
 tracking_url="$BASE_URL$tracking_path"
 
 if [ "$filled" != "true" ]; then
@@ -108,7 +110,7 @@ if [ "$filled" != "true" ]; then
   exit 1
 fi
 
-if [ -z "$explanation" ] || [ -z "$score_profit" ] || [ -z "$score_reject_rate" ] || [ -z "$score_reject_penalty" ]; then
+if [ -z "$explanation" ] || [ -z "$score_profit" ] || [ -z "$score_reject_rate" ] || [ -z "$score_reject_penalty" ] || [ -z "$score_alpha" ] || [ -z "$score_quality_state" ]; then
   echo "Missing explanation or score_breakdown in ad response." >&2
   exit 1
 fi

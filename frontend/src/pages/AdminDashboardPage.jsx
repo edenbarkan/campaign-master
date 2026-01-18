@@ -131,6 +131,9 @@ const AdminDashboardPage = () => {
                   <h3>${marketplaceHealth.profit.toFixed(2)}</h3>
                 </div>
               </div>
+              {marketplaceHealth.market_note ? (
+                <p className="muted">{marketplaceHealth.market_note}</p>
+              ) : null}
             </section>
             <section className="card">
               <h2>Under-delivering buyers</h2>

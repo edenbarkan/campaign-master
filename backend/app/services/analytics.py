@@ -2,6 +2,7 @@ import json
 from datetime import date, timedelta
 
 from sqlalchemy import case, func
+from flask import current_app
 
 from app.extensions import db
 from app.models.ad import Ad
@@ -10,6 +11,8 @@ from app.models.click_event import ClickEvent
 from app.models.impression_event import ImpressionEvent
 from app.models.partner_ad_request_event import PartnerAdRequestEvent
 from app.models.user import User
+from app.services.market_health import build_market_health_snapshot, derive_adaptive_multipliers
+from app.services.partner_quality import partner_quality_state, partner_reject_rate
 
 
 def _normalize_day(value):
@@ -347,6 +350,27 @@ def partner_latest_request(partner_id):
         breakdown["partner_reject_rate"] = 0
     if "partner_reject_penalty_weight" not in breakdown:
         breakdown["partner_reject_penalty_weight"] = 1
+    if "alpha_profit" not in breakdown:
+        breakdown["alpha_profit"] = 1
+    if "beta_ctr" not in breakdown:
+        breakdown["beta_ctr"] = 1
+    if "gamma_targeting" not in breakdown:
+        breakdown["gamma_targeting"] = 1
+    if "delta_quality" not in breakdown:
+        breakdown["delta_quality"] = 1
+    if "partner_quality_state" not in breakdown:
+        breakdown["partner_quality_state"] = "UNKNOWN"
+    if "partner_quality_penalty" not in breakdown:
+        base_penalty = breakdown.get("partner_reject_penalty", 0)
+        breakdown["partner_quality_penalty"] = base_penalty * breakdown.get("delta_quality", 1)
+    if "exploration_applied" not in breakdown:
+        breakdown["exploration_applied"] = False
+    if "exploration_bonus" not in breakdown:
+        breakdown["exploration_bonus"] = 0
+    if "delivery_boost" not in breakdown:
+        breakdown["delivery_boost"] = 0
+    if "delivery_boost_applied" not in breakdown:
+        breakdown["delivery_boost_applied"] = False
 
     return {
         "ad": {
@@ -415,12 +439,15 @@ def buyer_delivery_status(buyer_id):
     click_rate = clicks / total_requests if total_requests else 0
     if total_requests >= 10 and (fill_rate < 0.5 or click_rate < 0.01):
         status = "UNDER_DELIVERING"
+        note = "Low fill or click rate; delivery balancing may boost exposure."
     else:
         status = "ON_TRACK"
+        note = "Delivery pacing is within expected range."
     return {
         "status": status,
         "fill_rate": fill_rate,
         "total_requests": total_requests,
+        "note": note,
     }
 
 
@@ -532,6 +559,26 @@ def partner_quality_summary(partner_id):
     epc = float(earnings) / accepted_clicks if accepted_clicks else 0
     rejection_rate = rejected_clicks / total_clicks if total_clicks else 0
 
+    quality = partner_quality_state(
+        partner_id=partner_id,
+        recent_days=current_app.config.get("PARTNER_QUALITY_RECENT_DAYS", 1),
+        long_days=current_app.config.get("PARTNER_QUALITY_LONG_DAYS", 7),
+        new_clicks_threshold=current_app.config.get("PARTNER_QUALITY_NEW_CLICKS", 10),
+        risky_reject_rate=current_app.config.get("PARTNER_QUALITY_RISKY_REJECT_RATE", 0.2),
+        recovering_reject_rate=current_app.config.get(
+            "PARTNER_QUALITY_RECOVER_REJECT_RATE", 0.1
+        ),
+        delta_multipliers={
+            "NEW": current_app.config.get("PARTNER_QUALITY_DELTA_NEW", 0.8),
+            "STABLE": current_app.config.get("PARTNER_QUALITY_DELTA_STABLE", 1.0),
+            "RISKY": current_app.config.get("PARTNER_QUALITY_DELTA_RISKY", 1.5),
+            "RECOVERING": current_app.config.get("PARTNER_QUALITY_DELTA_RECOVERING", 1.1),
+        },
+    )
+    recent_reject_rate = partner_reject_rate(
+        partner_id, current_app.config.get("MATCH_REJECT_LOOKBACK_DAYS", 7)
+    )
+
     return {
         "accepted_clicks": accepted_clicks,
         "rejected_clicks": rejected_clicks,
@@ -539,6 +586,9 @@ def partner_quality_summary(partner_id):
         "ctr": ctr,
         "epc": epc,
         "rejection_rate": rejection_rate,
+        "partner_quality_state": quality["state"],
+        "partner_quality_note": quality["note"],
+        "recent_reject_rate": recent_reject_rate,
     }
 
 
@@ -610,11 +660,15 @@ def admin_marketplace_health():
         )
     low_quality.sort(key=lambda item: (-item["rejection_rate"], item["ctr"]))
 
+    snapshot = build_market_health_snapshot()
+    market_note = derive_adaptive_multipliers(snapshot)["market_note"]
+
     return {
         "fill_rate": fill_rate,
         "reject_rate": reject_rate,
         "profit": float(profit or 0),
         "take_rate": take_rate,
+        "market_note": market_note,
         "top_under_delivering_buyers": under_delivering[:5],
         "top_low_quality_partners": low_quality[:5],
     }

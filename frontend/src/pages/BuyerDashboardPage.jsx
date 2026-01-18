@@ -52,6 +52,9 @@ const BuyerDashboardPage = () => {
               Fill rate {(deliveryStatus.fill_rate * 100).toFixed(1)}% ·{" "}
               {deliveryStatus.total_requests} requests
             </span>
+            {deliveryStatus.note ? (
+              <span className="muted">{deliveryStatus.note}</span>
+            ) : null}
           </div>
         ) : null}
         <div className="metrics">

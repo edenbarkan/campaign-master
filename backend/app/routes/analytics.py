@@ -73,6 +73,7 @@ def partner_summary():
     epc = earnings_total / accepted_clicks if accepted_clicks else 0
     ctr = accepted_clicks / accepted_impressions if accepted_impressions else 0
     request_stats = partner_request_stats(partner_id)
+    quality = partner_quality_summary(partner_id)
 
     return jsonify(
         {
@@ -93,6 +94,8 @@ def partner_summary():
             "filled_requests": request_stats["filled_requests"],
             "top_ads": partner_top_ads(partner_id),
             "latest_request": partner_latest_request(partner_id),
+            "partner_quality_state": quality.get("partner_quality_state"),
+            "partner_quality_note": quality.get("partner_quality_note"),
         }
     )
 

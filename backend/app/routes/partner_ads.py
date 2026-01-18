@@ -70,6 +70,36 @@ def request_ad():
         ctr_weight=current_app.config.get("MATCH_CTR_WEIGHT", 1.0),
         targeting_bonus_value=current_app.config.get("MATCH_TARGETING_BONUS", 0.5),
         reject_penalty_weight=current_app.config.get("MATCH_REJECT_PENALTY_WEIGHT", 1.0),
+        exploration_rate=current_app.config.get("EXPLORATION_RATE", 0.05),
+        exploration_bonus=current_app.config.get("EXPLORATION_BONUS", 0.2),
+        exploration_new_partner_requests=current_app.config.get(
+            "EXPLORATION_NEW_PARTNER_REQUESTS", 5
+        ),
+        exploration_new_ad_serves=current_app.config.get("EXPLORATION_NEW_AD_SERVES", 1),
+        exploration_max_ad_serves=current_app.config.get("EXPLORATION_MAX_AD_SERVES", 5),
+        exploration_lookback_days=current_app.config.get("EXPLORATION_LOOKBACK_DAYS", 7),
+        quality_recent_days=current_app.config.get("PARTNER_QUALITY_RECENT_DAYS", 1),
+        quality_long_days=current_app.config.get("PARTNER_QUALITY_LONG_DAYS", 7),
+        quality_new_clicks=current_app.config.get("PARTNER_QUALITY_NEW_CLICKS", 10),
+        quality_risky_reject_rate=current_app.config.get(
+            "PARTNER_QUALITY_RISKY_REJECT_RATE", 0.2
+        ),
+        quality_recover_reject_rate=current_app.config.get(
+            "PARTNER_QUALITY_RECOVER_REJECT_RATE", 0.1
+        ),
+        quality_delta_new=current_app.config.get("PARTNER_QUALITY_DELTA_NEW", 0.8),
+        quality_delta_stable=current_app.config.get("PARTNER_QUALITY_DELTA_STABLE", 1.0),
+        quality_delta_risky=current_app.config.get("PARTNER_QUALITY_DELTA_RISKY", 1.5),
+        quality_delta_recovering=current_app.config.get(
+            "PARTNER_QUALITY_DELTA_RECOVERING", 1.1
+        ),
+        delivery_lookback_days=current_app.config.get("DELIVERY_LOOKBACK_DAYS", 7),
+        delivery_min_requests=current_app.config.get("DELIVERY_MIN_REQUESTS", 10),
+        delivery_low_click_rate=current_app.config.get("DELIVERY_LOW_CLICK_RATE", 0.01),
+        delivery_min_budget_remaining_ratio=current_app.config.get(
+            "DELIVERY_MIN_BUDGET_REMAINING_RATIO", 0.5
+        ),
+        delivery_boost_value=current_app.config.get("DELIVERY_BOOST_VALUE", 0.2),
         debug=str(current_app.config.get("MATCHING_DEBUG", "0")).lower()
         in ("1", "true", "yes"),
         debug_limit=3,

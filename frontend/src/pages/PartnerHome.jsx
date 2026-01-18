@@ -76,6 +76,32 @@ const PartnerHome = () => {
     ? `<a href="${trackingUrl}" target="_blank" rel="noreferrer"><img src="${assignment.ad.image_url}" alt="${assignment.ad.title}" /></a>`
     : "";
 
+  const breakdown = assignment?.score_breakdown || null;
+  const breakdownRows = breakdown
+    ? [
+        ["Profit", breakdown.profit],
+        ["Profit multiplier", breakdown.alpha_profit],
+        [
+          "Smoothed CTR",
+          `${((breakdown.ctr || 0) * 100).toFixed(2)}%`
+        ],
+        ["CTR weight", breakdown.ctr_weight],
+        ["CTR multiplier", breakdown.beta_ctr],
+        ["Targeting bonus", breakdown.targeting_bonus],
+        ["Targeting multiplier", breakdown.gamma_targeting],
+        [
+          "Partner reject rate",
+          `${((breakdown.partner_reject_rate || 0) * 100).toFixed(2)}%`
+        ],
+        ["Partner reject penalty", breakdown.partner_reject_penalty],
+        ["Quality multiplier", breakdown.delta_quality],
+        ["Partner quality penalty", breakdown.partner_quality_penalty],
+        ["Delivery boost", breakdown.delivery_boost ?? 0],
+        ["Exploration bonus", breakdown.exploration_bonus ?? 0],
+        ["Total score", breakdown.total]
+      ]
+    : [];
+
   return (
     <main className="page dashboard">
       <section className="panel">
@@ -153,28 +179,17 @@ const PartnerHome = () => {
                 <div className="card subtle">
                   <h3>Why this ad?</h3>
                   <p className="muted">{assignment.explanation}</p>
-                  {assignment.score_breakdown ? (
+                  {breakdown?.partner_quality_state ? (
+                    <p className="muted">
+                      Partner quality state: {breakdown.partner_quality_state}
+                    </p>
+                  ) : null}
+                  {breakdown?.market_note ? (
+                    <p className="muted">Market note: {breakdown.market_note}</p>
+                  ) : null}
+                  {breakdown ? (
                     <div className="table compact">
-                      {[
-                        ["Profit", assignment.score_breakdown.profit],
-                        [
-                          "Smoothed CTR",
-                          `${((assignment.score_breakdown.ctr || 0) * 100).toFixed(2)}%`
-                        ],
-                        ["CTR weight", assignment.score_breakdown.ctr_weight],
-                        ["Targeting bonus", assignment.score_breakdown.targeting_bonus],
-                        [
-                          "Partner reject rate",
-                          `${(
-                            (assignment.score_breakdown.partner_reject_rate || 0) * 100
-                          ).toFixed(2)}%`
-                        ],
-                        [
-                          "Partner quality penalty",
-                          assignment.score_breakdown.partner_reject_penalty
-                        ],
-                        ["Total score", assignment.score_breakdown.total]
-                      ].map(([label, value]) => (
+                      {breakdownRows.map(([label, value]) => (
                         <div className="table-row compact" key={label}>
                           <span className="muted">{label}</span>
                           <span>{value}</span>
@@ -189,22 +204,49 @@ const PartnerHome = () => {
                         <strong>Profit</strong> — Expected profit for this impression.
                       </li>
                       <li>
+                        <strong>Profit multiplier</strong> — Adaptive scaling based on
+                        market health.
+                      </li>
+                      <li>
                         <strong>Smoothed CTR</strong> — Recent click-through rate estimate.
                       </li>
                       <li>
                         <strong>CTR weight</strong> — How strongly CTR influences final score.
                       </li>
                       <li>
+                        <strong>CTR multiplier</strong> — Adaptive scaling applied to CTR.
+                      </li>
+                      <li>
                         <strong>Targeting bonus</strong> — Extra score for matching partner
                         targeting.
+                      </li>
+                      <li>
+                        <strong>Targeting multiplier</strong> — Adaptive scaling applied to
+                        targeting match.
                       </li>
                       <li>
                         <strong>Partner reject rate</strong> — Partner’s recent rejected-click
                         ratio.
                       </li>
                       <li>
-                        <strong>Partner quality penalty</strong> — Score reduction caused by
-                        partner reject rate.
+                        <strong>Partner reject penalty</strong> — Base penalty from reject
+                        rate and its weight.
+                      </li>
+                      <li>
+                        <strong>Quality multiplier</strong> — Scales penalties based on
+                        partner state and market conditions.
+                      </li>
+                      <li>
+                        <strong>Partner quality penalty</strong> — Final penalty applied after
+                        multipliers.
+                      </li>
+                      <li>
+                        <strong>Delivery boost</strong> — Temporary boost for under-delivering
+                        campaigns.
+                      </li>
+                      <li>
+                        <strong>Exploration bonus</strong> — Bonus for new ads or partners
+                        during exploration.
                       </li>
                       <li>
                         <strong>Total score</strong> — Final ranking score used by the matcher.

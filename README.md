@@ -103,7 +103,23 @@ The click validator records every click with an ACCEPTED or REJECTED status. Rej
 - `partner_reject_penalty` in score breakdown is derived from the partner's reject rate (partner quality), not the ad itself.
 - Reject rate window: last `MATCH_REJECT_LOOKBACK_DAYS` days (default 7).
 - Reject penalty formula: `partner_reject_penalty = partner_reject_rate * MATCH_REJECT_PENALTY_WEIGHT` (default weight 1.0).
+- Quality penalty applied to the score: `partner_quality_penalty = partner_reject_penalty * delta_quality`.
 - `partner_reject_rate` is computed from click decision events only (accepted + rejected clicks) within the lookback window — impressions are not included in this calculation.
+
+## Iteration 4: Adaptive matching + marketplace intelligence
+
+- Adaptive score formula: `profit * alpha_profit + ctr * beta_ctr + targeting_bonus * gamma_targeting - partner_quality_penalty * delta_quality`.
+- Adaptive multipliers (`alpha_profit`, `beta_ctr`, `gamma_targeting`, `delta_quality`) are derived from a runtime market health snapshot.
+- Partner quality lifecycle states: `NEW`, `STABLE`, `RISKY`, `RECOVERING` (state affects `delta_quality` only).
+- Controlled exploration adds a small, capped bonus for new partners or new ads (`exploration_applied`, `exploration_bonus`).
+- Delivery balancing adds a temporary boost for under-delivering campaigns (`delivery_boost`).
+- `score_breakdown` includes multipliers, `partner_quality_state`, `exploration_applied`, and `delivery_boost`.
+
+Key env knobs:
+- Market health: `MARKET_HEALTH_*`, `ALPHA_PROFIT_BOOST_*`, `BETA_CTR_BOOST_HEALTHY`, `GAMMA_TARGETING_BOOST_*`, `DELTA_QUALITY_BOOST_*`.
+- Partner quality: `PARTNER_QUALITY_*`.
+- Exploration: `EXPLORATION_*`.
+- Delivery balancing: `DELIVERY_*`.
 
 ## Reject penalty verification
 

@@ -51,7 +51,9 @@ const PartnerDashboardPage = () => {
     fill_rate: fillRate = 0,
     unfilled_requests: unfilledRequests = 0,
     total_requests: totalRequests = 0,
-    filled_requests: filledRequests = 0
+    filled_requests: filledRequests = 0,
+    partner_quality_state: partnerQualityState,
+    partner_quality_note: partnerQualityNote
   } = data;
   const ctr = (quality.ctr || 0) * 100;
   const rejectionRate = (quality.rejection_rate || 0) * 100;
@@ -63,6 +65,32 @@ const PartnerDashboardPage = () => {
       return null;
     }
   })();
+
+  const latestBreakdown = latestRequest?.score_breakdown || null;
+  const breakdownRows = latestBreakdown
+    ? [
+        ["Profit", latestBreakdown.profit],
+        ["Profit multiplier", latestBreakdown.alpha_profit],
+        [
+          "Smoothed CTR",
+          `${((latestBreakdown.ctr || 0) * 100).toFixed(2)}%`
+        ],
+        ["CTR weight", latestBreakdown.ctr_weight],
+        ["CTR multiplier", latestBreakdown.beta_ctr],
+        ["Targeting bonus", latestBreakdown.targeting_bonus],
+        ["Targeting multiplier", latestBreakdown.gamma_targeting],
+        [
+          "Partner reject rate",
+          `${((latestBreakdown.partner_reject_rate || 0) * 100).toFixed(2)}%`
+        ],
+        ["Partner reject penalty", latestBreakdown.partner_reject_penalty],
+        ["Quality multiplier", latestBreakdown.delta_quality],
+        ["Partner quality penalty", latestBreakdown.partner_quality_penalty],
+        ["Delivery boost", latestBreakdown.delivery_boost ?? 0],
+        ["Exploration bonus", latestBreakdown.exploration_bonus ?? 0],
+        ["Total score", latestBreakdown.total]
+      ]
+    : [];
 
   return (
     <main className="page dashboard">
@@ -94,6 +122,10 @@ const PartnerDashboardPage = () => {
             <h3>{rejectionRate.toFixed(2)}%</h3>
           </div>
           <div className="metric-card">
+            <p>Quality state</p>
+            <h3>{partnerQualityState || "N/A"}</h3>
+          </div>
+          <div className="metric-card">
             <p>Fill rate</p>
             <h3>{(fillRate * 100).toFixed(1)}%</h3>
           </div>
@@ -110,6 +142,7 @@ const PartnerDashboardPage = () => {
             <h3>{unfilledRequests}</h3>
           </div>
         </div>
+        {partnerQualityNote ? <p className="muted">{partnerQualityNote}</p> : null}
         <div className="grid charts">
           <section className="card">
             <h2>Earnings over time</h2>
@@ -174,28 +207,17 @@ const PartnerDashboardPage = () => {
           <section className="card">
             <h2>Why this ad?</h2>
             <p className="muted">{latestRequest.explanation || "No explanation yet."}</p>
-            {latestRequest.score_breakdown ? (
+            {latestBreakdown?.partner_quality_state ? (
+              <p className="muted">
+                Partner quality state: {latestBreakdown.partner_quality_state}
+              </p>
+            ) : null}
+            {latestBreakdown?.market_note ? (
+              <p className="muted">Market note: {latestBreakdown.market_note}</p>
+            ) : null}
+            {latestBreakdown ? (
               <div className="table compact">
-                {[
-                  ["Profit", latestRequest.score_breakdown.profit],
-                  [
-                    "Smoothed CTR",
-                    `${((latestRequest.score_breakdown.ctr || 0) * 100).toFixed(2)}%`
-                  ],
-                  ["CTR weight", latestRequest.score_breakdown.ctr_weight],
-                  ["Targeting bonus", latestRequest.score_breakdown.targeting_bonus],
-                  [
-                    "Partner reject rate",
-                    `${(
-                      (latestRequest.score_breakdown.partner_reject_rate || 0) * 100
-                    ).toFixed(2)}%`
-                  ],
-                  [
-                    "Partner quality penalty",
-                    latestRequest.score_breakdown.partner_reject_penalty
-                  ],
-                  ["Total score", latestRequest.score_breakdown.total]
-                ].map(([label, value]) => (
+                {breakdownRows.map(([label, value]) => (
                   <div className="table-row compact" key={label}>
                     <span className="muted">{label}</span>
                     <span>{value}</span>
@@ -210,20 +232,47 @@ const PartnerDashboardPage = () => {
                   <strong>Profit</strong> — Expected profit for this impression.
                 </li>
                 <li>
+                  <strong>Profit multiplier</strong> — Adaptive scaling based on market
+                  health.
+                </li>
+                <li>
                   <strong>Smoothed CTR</strong> — Recent click-through rate estimate.
                 </li>
                 <li>
                   <strong>CTR weight</strong> — How strongly CTR influences final score.
                 </li>
                 <li>
+                  <strong>CTR multiplier</strong> — Adaptive scaling applied to CTR.
+                </li>
+                <li>
                   <strong>Targeting bonus</strong> — Extra score for matching partner targeting.
+                </li>
+                <li>
+                  <strong>Targeting multiplier</strong> — Adaptive scaling applied to targeting
+                  match.
                 </li>
                 <li>
                   <strong>Partner reject rate</strong> — Partner’s recent rejected-click ratio.
                 </li>
                 <li>
-                  <strong>Partner quality penalty</strong> — Score reduction caused by partner
-                  reject rate.
+                  <strong>Partner reject penalty</strong> — Base penalty from reject rate and
+                  its weight.
+                </li>
+                <li>
+                  <strong>Quality multiplier</strong> — Scales penalties based on partner state
+                  and market conditions.
+                </li>
+                <li>
+                  <strong>Partner quality penalty</strong> — Final penalty applied after
+                  multipliers.
+                </li>
+                <li>
+                  <strong>Delivery boost</strong> — Temporary boost for under-delivering
+                  campaigns.
+                </li>
+                <li>
+                  <strong>Exploration bonus</strong> — Bonus for new ads or partners during
+                  exploration.
                 </li>
                 <li>
                   <strong>Total score</strong> — Final ranking score used by the matcher.
