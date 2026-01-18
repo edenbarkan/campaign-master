@@ -16,9 +16,14 @@ const OnboardingOverlay = ({ role, onDismiss }) => {
             <li key={step}>{step}</li>
           ))}
         </ul>
-        <button className="button primary" type="button" onClick={onDismiss}>
-          Got it
-        </button>
+        <div className="onboarding-actions">
+          <button className="button primary" type="button" onClick={onDismiss}>
+            Got it
+          </button>
+          <button className="button ghost" type="button" onClick={onDismiss}>
+            Skip
+          </button>
+        </div>
       </div>
     </div>
   );

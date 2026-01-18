@@ -124,11 +124,13 @@ Key env knobs:
 ## Iteration 5: UX hardening controls
 
 - Simple/Advanced view toggles for Buyer and Partner pages (persisted in localStorage).
+- Tab-style toggle with helper hint for Simple vs Advanced views.
 - Role-based onboarding overlay (dismissed once per role).
 - "Market Stability Guard" note clarifies scoring is rank-only.
 - Partner quality badge highlights state with tooltip guidance.
 - Admin 7d/30d/90d date range filter + reject-reason drill-down panel.
 - "How it works" pages are linked in each role header (Buyer/Partner/Admin) with glossary + FAQs.
+- "How it works" pages include quick action CTAs, plus a partner template helper.
 
 Atlas E2E plan: `docs/atlas_e2e_plan.md`.
 
@@ -143,6 +145,12 @@ Atlas E2E plan: `docs/atlas_e2e_plan.md`.
 7) Click 7d/30d/90d filters and open a reject reason detail panel.
 
 Always logout before switching roles.
+
+## What changed / How to verify manually
+
+- Buyer: toggle Simple/Advanced tabs on the dashboard and confirm the hint text and advanced KPIs (budget left, max CPC, clicks) appear; open "How it works" and use the CTA links.
+- Partner: confirm the quality badge styling and tooltips, open "Get Ad" and verify "Record impression" / "Test click" tooltips; open "How it works" and try the template helper.
+- Admin: switch date presets, click a reject reason to open the detail panel, and open the "How it works" page.
 
 ## Reject penalty verification
 

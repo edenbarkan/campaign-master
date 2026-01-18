@@ -110,31 +110,40 @@ const PartnerDashboardPage = () => {
     : [];
   const qualityAlerts = {
     NEW: {
-      label: "! NEW",
+      label: "NEW",
       tone: "new",
       note: "Building history. Keep traffic clean to establish a strong baseline.",
       tooltip: "Early data only. Quality signals will stabilize with more traffic."
     },
     STABLE: {
-      label: "OK STABLE",
+      label: "STABLE",
       tone: "stable",
       note: "Quality is within normal range.",
       tooltip: "Stable quality signal."
     },
+    AT_RISK: {
+      label: "AT RISK",
+      tone: "at-risk",
+      note: "Quality is slipping. Reduce rapid refreshes and retries.",
+      tooltip: "Rising reject rate for this partner."
+    },
     RISKY: {
-      label: "! AT RISK",
+      label: "RISKY",
       tone: "risky",
       note: "At risk: reduce repeat clicks and avoid rapid refreshes.",
       tooltip: "Elevated reject rate for this partner."
     },
     RECOVERING: {
-      label: "~ RECOVERING",
+      label: "RECOVERING",
       tone: "recovering",
       note: "Improving quality. Keep traffic steady and policy-compliant.",
       tooltip: "Quality is improving after recent rejects."
     }
   };
   const qualityAlert = partnerQualityState ? qualityAlerts[partnerQualityState] : null;
+  const breakdownQualityAlert = latestBreakdown?.partner_quality_state
+    ? qualityAlerts[latestBreakdown.partner_quality_state] || null
+    : qualityAlert;
   const breakdownRows = latestBreakdown
     ? [
         ["Profit", latestBreakdown.profit],
@@ -169,7 +178,7 @@ const PartnerDashboardPage = () => {
     <main className="page dashboard">
         <section className="panel">
           <RoleHeader subtitle={UI_STRINGS.partner.dashboardSubtitle} />
-          <div className="view-toggle" role="group" aria-label="Partner view mode">
+        <div className="view-toggle" role="group" aria-label="Partner view mode">
             <button
               type="button"
               className={`toggle-button ${!isAdvanced ? "active" : ""}`}
@@ -185,8 +194,9 @@ const PartnerDashboardPage = () => {
               aria-pressed={isAdvanced}
             >
               {UI_STRINGS.common.advancedView}
-            </button>
-          </div>
+          </button>
+        </div>
+        <p className="toggle-hint">{UI_STRINGS.common.viewModeHint}</p>
         <div className="metrics">
           <div className="metric-card">
             <p>Earnings</p>
@@ -198,7 +208,13 @@ const PartnerDashboardPage = () => {
           </div>
           <div className="metric-card">
             <p>Quality state</p>
-            <h3>{partnerQualityState || "N/A"}</h3>
+            {qualityAlert ? (
+              <span className={`badge ${qualityAlert.tone}`} title={qualityAlert.tooltip}>
+                {qualityAlert.label}
+              </span>
+            ) : (
+              <h3>—</h3>
+            )}
           </div>
           <div className="metric-card">
             <p>Fill rate</p>
@@ -337,10 +353,16 @@ const PartnerDashboardPage = () => {
             {isAdvanced ? (
               <>
                 <p className="muted">{latestRequest.explanation || "No explanation yet."}</p>
-                {latestBreakdown?.partner_quality_state ? (
-                  <p className="muted">
-                    Partner quality state: {latestBreakdown.partner_quality_state}
-                  </p>
+                {breakdownQualityAlert ? (
+                  <div className="quality-alert">
+                    <span
+                      className={`badge ${breakdownQualityAlert.tone}`}
+                      title={breakdownQualityAlert.tooltip}
+                    >
+                      {breakdownQualityAlert.label}
+                    </span>
+                    <span className="muted">Partner quality state</span>
+                  </div>
                 ) : null}
                 {latestBreakdown?.market_note ? (
                   <p className="muted">Market note: {latestBreakdown.market_note}</p>

@@ -146,6 +146,36 @@ const PartnerHome = () => {
         ["Total score", breakdown.total]
       ]
     : [];
+  const qualityStates = {
+    NEW: {
+      label: "NEW",
+      tone: "new",
+      tooltip: "New partner signal. Quality will stabilize with more data."
+    },
+    STABLE: {
+      label: "STABLE",
+      tone: "stable",
+      tooltip: "Stable quality signal."
+    },
+    AT_RISK: {
+      label: "AT RISK",
+      tone: "at-risk",
+      tooltip: "Rising reject rate. Avoid rapid refreshes."
+    },
+    RISKY: {
+      label: "RISKY",
+      tone: "risky",
+      tooltip: "High reject rate. Reduce duplicate clicks."
+    },
+    RECOVERING: {
+      label: "RECOVERING",
+      tone: "recovering",
+      tooltip: "Quality is improving after recent rejects."
+    }
+  };
+  const qualityBadge = breakdown?.partner_quality_state
+    ? qualityStates[breakdown.partner_quality_state] || null
+    : null;
 
   return (
     <main className="page dashboard">
@@ -172,6 +202,7 @@ const PartnerHome = () => {
             {UI_STRINGS.common.advancedView}
           </button>
         </div>
+        <p className="toggle-hint">{UI_STRINGS.common.viewModeHint}</p>
         <div className="grid">
           <section className="card">
             <h2>Get an ad</h2>
@@ -272,10 +303,16 @@ const PartnerHome = () => {
                   {isAdvanced ? (
                     <>
                       <p className="muted">{assignment.explanation}</p>
-                      {breakdown?.partner_quality_state ? (
-                        <p className="muted">
-                          Partner quality state: {breakdown.partner_quality_state}
-                        </p>
+                      {qualityBadge ? (
+                        <div className="quality-alert">
+                          <span
+                            className={`badge ${qualityBadge.tone}`}
+                            title={qualityBadge.tooltip}
+                          >
+                            {qualityBadge.label}
+                          </span>
+                          <span className="muted">Partner quality state</span>
+                        </div>
                       ) : null}
                       {breakdown?.market_note ? (
                         <p className="muted">Market note: {breakdown.market_note}</p>

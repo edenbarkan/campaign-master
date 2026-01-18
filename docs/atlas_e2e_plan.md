@@ -4,6 +4,7 @@
 - Log out before switching roles.
 - Verify no `undefined`, `null`, or `NaN` is visible in UI labels or metrics.
 - Confirm active Simple/Advanced toggle styling is visibly selected.
+- Confirm onboarding appears on first login per role and stays dismissed after reload.
 
 ## Partner flow
 1) Login as `partner@demo.com` / `partnerpass`.
@@ -27,6 +28,6 @@
 1) Logout, then login as `admin@demo.com` / `adminpass`.
 2) Use 7d/30d/90d filter; ensure totals and charts update without errors.
 3) Hover the date presets and reject reason rows to confirm tooltips appear.
-4) Click a reject reason row and verify the detail panel shows guidance text.
+4) Click a reject reason row and verify the detail panel shows meaning, cause, and mitigation text.
 5) Use the header "How it works" link and confirm Admin-specific content loads.
 6) Confirm onboarding overlay shows once, then stays dismissed.

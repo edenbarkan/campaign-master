@@ -88,6 +88,7 @@ const BuyerDashboardPage = () => {
             {UI_STRINGS.common.advancedView}
           </button>
         </div>
+        <p className="toggle-hint">{UI_STRINGS.common.viewModeHint}</p>
         {deliveryStatus ? (
           <div className="status-row">
             <span className={`badge ${deliveryStatus.status.toLowerCase()}`}>

@@ -48,6 +48,10 @@ const BuyerHome = () => {
     Math.max(0, Number(form.budget_total || 0) - Number(form.budget_spent || 0))
   );
   const isAdvanced = viewMode === "advanced";
+  const formatMoney = (value) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed.toFixed(2) : "0.00";
+  };
 
   const loadCampaigns = async () => {
     try {
@@ -193,6 +197,7 @@ const BuyerHome = () => {
             {UI_STRINGS.common.advancedView}
           </button>
         </div>
+        <p className="toggle-hint">{UI_STRINGS.common.viewModeHint}</p>
         <div className="grid">
           <section className="card">
             <h2>{editingId ? "Edit campaign" : "New campaign"}</h2>
@@ -251,7 +256,7 @@ const BuyerHome = () => {
                 </label>
                 <label className="field">
                   <span title={UI_STRINGS.common.partnerPayoutTooltip}>
-                    Partner payout (computed)
+                    Partner payout (estimated)
                   </span>
                   <input
                     value={`$${computedPayout.toFixed(2)}`}
@@ -354,8 +359,10 @@ const BuyerHome = () => {
                   <div>
                     <p className="row-title">{campaign.name}</p>
                     <p className="muted">
-                      {campaign.status} · $
-                      {(campaign.max_cpc ?? campaign.buyer_cpc).toFixed(2)} max CPC
+                      {campaign.status}
+                      {isAdvanced
+                        ? ` · $${formatMoney(campaign.max_cpc ?? campaign.buyer_cpc)} max CPC`
+                        : ""}
                     </p>
                     {campaign.delivery_status ? (
                       <span className={`badge ${campaign.delivery_status.toLowerCase()}`}>
@@ -364,8 +371,10 @@ const BuyerHome = () => {
                     ) : null}
                   </div>
                   <div className="row-metrics">
-                    <span>${campaign.budget_spent.toFixed(2)} spent</span>
-                    <span>${campaign.budget_remaining.toFixed(2)} left</span>
+                    <span>${formatMoney(campaign.budget_spent)} spent</span>
+                    {isAdvanced ? (
+                      <span>${formatMoney(campaign.budget_remaining)} left</span>
+                    ) : null}
                   </div>
                   <button
                     className="button ghost"

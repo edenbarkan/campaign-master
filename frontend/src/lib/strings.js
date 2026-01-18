@@ -6,6 +6,7 @@ export const UI_STRINGS = {
     marketStabilityGuardNote:
       "Stabilizes delivery quality — never adds hidden costs. Ranking only.",
     scoringDisclaimer: "Scoring affects ranking only — billing is unchanged.",
+    viewModeHint: "Simple shows essentials. Advanced shows full details.",
     recordImpressionTooltip: "Counts a single view for analytics. No billing impact.",
     testClickTooltip: "Opens the tracking link. Click billing follows normal rules.",
     rejectSignalTooltip: "Partner-derived quality signal; not tied to a single ad.",
@@ -31,28 +32,25 @@ export const UI_STRINGS = {
     partner: {
       title: "Partner quick start",
       steps: [
-        "Request an ad and place the tracking link on your site.",
+        "Request an ad and use the tracking link or embed snippet.",
         "Record impressions to keep CTR accurate.",
-        "Quality signals protect the marketplace — no hidden costs.",
-        "Get paid per accepted click."
+        "Quality matters — avoid rapid refreshes and duplicate clicks."
       ]
     },
     buyer: {
       title: "Buyer quick start",
       steps: [
         "Create a campaign with budget and max CPC.",
-        "Add ads with image + destination URL.",
-        "Status controls delivery — paused campaigns do not serve.",
-        "Spend is charged only on accepted clicks."
+        "Add ads with an image URL and destination URL.",
+        "Billing happens only on accepted clicks."
       ]
     },
     admin: {
       title: "Admin quick start",
       steps: [
-        "Marketplace health tracks fill, reject rate, and take rate.",
-        "Risk trends highlight rejected clicks and causes.",
-        "Under-delivery flags pacing issues, not billing errors.",
-        "No hidden costs — scoring only changes ranking."
+        "Review market health: fill, delivery, and take rate.",
+        "Monitor risk reasons for rejected clicks.",
+        "Use date ranges to interpret trends."
       ]
     }
   }

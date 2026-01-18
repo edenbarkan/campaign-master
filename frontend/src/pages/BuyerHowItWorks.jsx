@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
 import RoleHeader from "../components/RoleHeader.jsx";
 import { HOW_IT_WORKS, GLOSSARY } from "../lib/helpContent";
@@ -39,6 +40,17 @@ const BuyerHowItWorks = () => {
               <li key={item}>{item}</li>
             ))}
           </ul>
+        </section>
+        <section className="card help-section">
+          <h2>Quick actions</h2>
+          <div className="help-actions">
+            <Link className="button primary" to="/buyer/campaigns">
+              Go to Campaigns
+            </Link>
+            <Link className="button ghost" to="/buyer/dashboard">
+              Go to Dashboard
+            </Link>
+          </div>
         </section>
         <section className="card help-section">
           <h2>Key terms</h2>

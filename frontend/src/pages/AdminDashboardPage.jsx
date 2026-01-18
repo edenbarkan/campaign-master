@@ -325,7 +325,9 @@ const AdminDashboardPage = () => {
                 </p>
               </div>
             ) : (
-              <p className="muted">Select a reason to see details.</p>
+              <p className="muted">
+                Select a reject reason to see meaning and mitigation steps.
+              </p>
             )}
           </section>
           <section className="card">
