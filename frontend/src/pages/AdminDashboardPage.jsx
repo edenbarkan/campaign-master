@@ -60,10 +60,18 @@ const AdminDashboardPage = () => {
     );
   }
 
-  const { totals, top_campaigns: topCampaigns, top_partners: topPartners } = summary;
+  const {
+    totals,
+    top_campaigns: topCampaigns,
+    top_partners: topPartners,
+    marketplace_health: marketplaceHealth
+  } = summary;
   const riskTotals = riskSummary.totals || {};
   const topReason = (riskSummary.top_reasons || [])[0];
   const rejectionRate = (riskTotals.rejection_rate || 0) * 100;
+  const marketplaceFillRate = (marketplaceHealth?.fill_rate || 0) * 100;
+  const marketplaceRejectRate = (marketplaceHealth?.reject_rate || 0) * 100;
+  const marketplaceTakeRate = (marketplaceHealth?.take_rate || 0) * 100;
 
   return (
     <main className="page dashboard">
@@ -101,6 +109,65 @@ const AdminDashboardPage = () => {
             </ResponsiveContainer>
           </section>
         </div>
+        {marketplaceHealth ? (
+          <div className="grid">
+            <section className="card">
+              <h2>Marketplace health</h2>
+              <div className="metrics compact">
+                <div className="metric-card">
+                  <p>Fill rate</p>
+                  <h3>{marketplaceFillRate.toFixed(1)}%</h3>
+                </div>
+                <div className="metric-card">
+                  <p>Reject rate</p>
+                  <h3>{marketplaceRejectRate.toFixed(1)}%</h3>
+                </div>
+                <div className="metric-card">
+                  <p>Take rate</p>
+                  <h3>{marketplaceTakeRate.toFixed(1)}%</h3>
+                </div>
+                <div className="metric-card">
+                  <p>Profit</p>
+                  <h3>${marketplaceHealth.profit.toFixed(2)}</h3>
+                </div>
+              </div>
+            </section>
+            <section className="card">
+              <h2>Under-delivering buyers</h2>
+              <div className="table">
+                {(marketplaceHealth.top_under_delivering_buyers || []).map((buyer) => (
+                  <div className="table-row compact" key={buyer.id}>
+                    <div>
+                      <p className="row-title">{buyer.email}</p>
+                      <p className="muted">
+                        {(buyer.fill_rate * 100).toFixed(1)}% fill · {buyer.clicks} clicks
+                      </p>
+                    </div>
+                    <div className="row-metrics">
+                      <span>{buyer.status.replace("_", " ")}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+            <section className="card">
+              <h2>Low-quality partners</h2>
+              <div className="table">
+                {(marketplaceHealth.top_low_quality_partners || []).map((partner) => (
+                  <div className="table-row compact" key={partner.id}>
+                    <div>
+                      <p className="row-title">{partner.email}</p>
+                      <p className="muted">
+                        {(partner.rejection_rate * 100).toFixed(1)}% rejects ·{" "}
+                        {(partner.ctr * 100).toFixed(2)}% CTR
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </div>
+        ) : null}
         <div className="grid">
           <section className="card">
             <h2>Top campaigns by spend</h2>

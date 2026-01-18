@@ -40,6 +40,12 @@ Key environment variables (see `.env.example`):
 - `CLICK_DUPLICATE_WINDOW_SECONDS`: duplicate click rejection window (default 10).
 - `CLICK_RATE_LIMIT_PER_MINUTE`: per-IP click rate limit (default 20/min).
 - `IMPRESSION_DEDUP_WINDOW_SECONDS`: impression dedup window (default 60).
+- `FREQ_CAP_SECONDS`: frequency cap window per partner/ad (default 60).
+- `MATCH_CTR_LOOKBACK_DAYS`: CTR history lookback window (default 14).
+- `MATCH_REJECT_LOOKBACK_DAYS`: reject-rate lookback window (default 7).
+- `MATCH_CTR_WEIGHT`: CTR weight in matching score (default 1.0).
+- `MATCH_TARGETING_BONUS`: bonus per targeting match (default 0.5).
+- `MATCH_REJECT_PENALTY_WEIGHT`: reject-rate penalty weight (default 1.0).
 
 Health check:
 
@@ -87,6 +93,27 @@ The click validator records every click with an ACCEPTED or REJECTED status. Rej
 - `BUDGET_EXHAUSTED` campaign cannot cover the max CPC and is paused.
 - `INVALID_ASSIGNMENT` missing or invalid assignment code.
 - `BOT_SUSPECTED` empty user-agent string.
+
+## Matching v2 notes
+
+- Partner ad requests are tracked (filled vs unfilled) to compute fill-rate.
+- Frequency capping prevents the same ad from returning to the same partner within the cap window.
+- Match responses include `explanation` and `score_breakdown` for transparency.
+- Partner requests use `GET /api/partner/ad` with optional query params: `category`, `geo`, `placement`, `device`.
+- `partner_reject_penalty` in score breakdown is derived from the partner's reject rate (partner quality), not the ad itself.
+- Reject rate window: last `MATCH_REJECT_LOOKBACK_DAYS` days (default 7).
+- Reject penalty formula: `partner_reject_penalty = partner_reject_rate * MATCH_REJECT_PENALTY_WEIGHT` (default weight 1.0).
+- `partner_reject_rate` is computed from click decision events only (accepted + rejected clicks) within the lookback window — impressions are not included in this calculation.
+
+## Reject penalty verification
+
+```bash
+bash scripts/verify_reject_penalty.sh
+```
+
+Notes:
+- The script runs `make demo` with `MATCHING_DEBUG=1` and `FREQ_CAP_SECONDS=0` unless `VERIFY_SKIP_DEMO=1` is set.
+- It creates a temporary buyer + partner, requests an ad, forces a duplicate-click rejection, and asserts the penalty update.
 
 ## Reset
 

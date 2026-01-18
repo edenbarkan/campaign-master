@@ -13,6 +13,7 @@ from app.models.assignment import AdAssignment
 from app.models.campaign import Campaign
 from app.models.click_event import ClickEvent
 from app.models.impression_event import ImpressionEvent
+from app.models.partner_ad_request_event import PartnerAdRequestEvent
 from app.models.user import User
 from app.services.pricing import compute_partner_payout
 
@@ -29,6 +30,12 @@ def app():
             "CLICK_DUPLICATE_WINDOW_SECONDS": 10,
             "CLICK_RATE_LIMIT_PER_MINUTE": 20,
             "IMPRESSION_DEDUP_WINDOW_SECONDS": 60,
+            "FREQ_CAP_SECONDS": 60,
+            "MATCH_CTR_LOOKBACK_DAYS": 14,
+            "MATCH_REJECT_LOOKBACK_DAYS": 7,
+            "MATCH_CTR_WEIGHT": 1.0,
+            "MATCH_TARGETING_BONUS": 0.5,
+            "MATCH_REJECT_PENALTY_WEIGHT": 1.0,
         }
     )
     with app.app_context():
@@ -371,3 +378,106 @@ def test_click_tracking_updates_earnings(client, app):
     with app.app_context():
         refreshed_campaign = Campaign.query.first()
         assert float(refreshed_campaign.budget_spent) == 10.0
+
+
+def test_partner_ad_response_explainable_and_requests_tracked(client, app):
+    with app.app_context():
+        buyer, partner, _ = create_users()
+        campaign = create_campaign(buyer.id, "2.00", "100.00")
+        ad = create_ad(campaign.id)
+        partner_id = partner.id
+
+    login = client.post(
+        "/api/auth/login",
+        json={"email": "partner@example.com", "password": "pass"},
+    )
+    assert login.status_code == 200
+    token = login.get_json()["access_token"]
+
+    response = client.get(
+        "/api/partner/ad",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert payload["filled"] is True
+    assert "explanation" in payload
+    assert "score_breakdown" in payload
+    assert "partner_reject_rate" in payload["score_breakdown"]
+    assert "partner_reject_penalty" in payload["score_breakdown"]
+
+    with app.app_context():
+        requests = PartnerAdRequestEvent.query.filter_by(partner_id=partner_id).all()
+        assert len(requests) == 1
+        assert requests[0].filled is True
+
+
+def test_frequency_cap_blocks_repeat(client, app):
+    with app.app_context():
+        buyer, partner, _ = create_users()
+        campaign = create_campaign(buyer.id, "2.00", "100.00")
+        create_ad(campaign.id)
+        partner_id = partner.id
+
+    login = client.post(
+        "/api/auth/login",
+        json={"email": "partner@example.com", "password": "pass"},
+    )
+    assert login.status_code == 200
+    token = login.get_json()["access_token"]
+
+    first = client.get(
+        "/api/partner/ad",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert first.status_code == 200
+    assert first.get_json()["filled"] is True
+
+    second = client.get(
+        "/api/partner/ad",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert second.status_code == 200
+    payload = second.get_json()
+    assert payload["filled"] is False
+    assert payload.get("reason") == "FREQ_CAP"
+
+    with app.app_context():
+        total_requests = PartnerAdRequestEvent.query.filter_by(partner_id=partner_id).count()
+        filled_requests = PartnerAdRequestEvent.query.filter_by(
+            partner_id=partner_id, filled=True
+        ).count()
+        unfilled_requests = PartnerAdRequestEvent.query.filter_by(
+            partner_id=partner_id, filled=False
+        ).count()
+        assert total_requests == 2
+        assert filled_requests == 1
+        assert unfilled_requests == 1
+
+
+def test_partner_analytics_request_counters(client, app):
+    with app.app_context():
+        buyer, partner, _ = create_users()
+        campaign = create_campaign(buyer.id, "2.00", "100.00")
+        create_ad(campaign.id)
+
+    login = client.post(
+        "/api/auth/login",
+        json={"email": "partner@example.com", "password": "pass"},
+    )
+    assert login.status_code == 200
+    token = login.get_json()["access_token"]
+
+    client.get("/api/partner/ad", headers={"Authorization": f"Bearer {token}"})
+    client.get("/api/partner/ad", headers={"Authorization": f"Bearer {token}"})
+
+    summary = client.get(
+        "/api/partner/analytics/summary",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert summary.status_code == 200
+    payload = summary.get_json()
+    assert "total_requests" in payload
+    assert "filled_requests" in payload
+    assert "unfilled_requests" in payload
+    assert "fill_rate" in payload

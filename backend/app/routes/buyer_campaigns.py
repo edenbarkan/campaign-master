@@ -7,6 +7,8 @@ from flask_jwt_extended import get_jwt_identity
 from app.auth.decorators import roles_required
 from app.extensions import db
 from app.models.campaign import Campaign
+from app.models.click_event import ClickEvent
+from app.models.impression_event import ImpressionEvent
 from app.services.pricing import compute_partner_payout, get_platform_fee_percent
 
 buyer_campaigns_bp = Blueprint("buyer_campaigns", __name__)
@@ -30,7 +32,23 @@ def parse_date(value, field_name):
         raise ValueError(f"invalid_{field_name}")
 
 
+def campaign_delivery_status(campaign):
+    clicks = (
+        ClickEvent.query.filter_by(campaign_id=campaign.id, status="ACCEPTED").count()
+    )
+    impressions = (
+        ImpressionEvent.query.filter_by(campaign_id=campaign.id, status="ACCEPTED").count()
+    )
+    ctr = clicks / impressions if impressions else 0
+    if campaign.status != "active":
+        return "PAUSED", ctr
+    if impressions >= 20 and ctr < 0.01:
+        return "UNDER_DELIVERING", ctr
+    return "ON_TRACK", ctr
+
+
 def campaign_to_dict(campaign):
+    delivery_status, ctr = campaign_delivery_status(campaign)
     return {
         "id": campaign.id,
         "name": campaign.name,
@@ -42,6 +60,8 @@ def campaign_to_dict(campaign):
         "max_cpc": float(campaign.max_cpc),
         "partner_payout": float(campaign.partner_payout),
         "platform_fee_percent": float(get_platform_fee_percent()),
+        "delivery_status": delivery_status,
+        "ctr": ctr,
         "targeting": {
             "category": campaign.targeting_category,
             "geo": campaign.targeting_geo,

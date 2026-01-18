@@ -268,6 +268,68 @@ textarea {
   grid-template-columns: 1fr auto;
 }
 
+.table.compact .table-row {
+  grid-template-columns: 1fr auto;
+  padding: 8px 10px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: 6px;
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.badge.on_track {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.badge.under_delivering {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.badge.paused {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.status-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.card.subtle {
+  background: #f8fafc;
+  border-style: dashed;
+}
+
+.score-legend {
+  margin-top: 12px;
+  font-size: 13px;
+  color: #475569;
+}
+
+.score-legend summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.legend-list {
+  margin: 8px 0 0 18px;
+  color: #6b7280;
+}
+
 .row-title {
   margin: 0 0 4px;
   font-weight: 600;

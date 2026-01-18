@@ -37,9 +37,20 @@ const PartnerHome = () => {
       const payload = await apiFetch(`/partner/ad${query ? `?${query}` : ""}`, {
         token
       });
+      if (!payload.filled) {
+        const reason = payload.reason || "NO_ELIGIBLE_ADS";
+        const message =
+          reason === "FREQ_CAP"
+            ? "Frequency cap hit. Try again in a minute or change filters."
+            : "No fill available. Try adjusting category, geo, placement, or device.";
+        setError(message);
+        setAssignment(null);
+        return;
+      }
       setAssignment(payload);
+      localStorage.setItem("partnerLatestAd", JSON.stringify(payload));
     } catch (err) {
-      setError("No fill available for the current filters.");
+      setError("Unable to request an ad. Check your connection and try again.");
       setAssignment(null);
     } finally {
       setLoading(false);
@@ -138,6 +149,68 @@ const PartnerHome = () => {
                 <div className="snippet">
                   <p className="muted">Embed snippet</p>
                   <textarea readOnly value={embedSnippet} rows={3} />
+                </div>
+                <div className="card subtle">
+                  <h3>Why this ad?</h3>
+                  <p className="muted">{assignment.explanation}</p>
+                  {assignment.score_breakdown ? (
+                    <div className="table compact">
+                      {[
+                        ["Profit", assignment.score_breakdown.profit],
+                        [
+                          "Smoothed CTR",
+                          `${((assignment.score_breakdown.ctr || 0) * 100).toFixed(2)}%`
+                        ],
+                        ["CTR weight", assignment.score_breakdown.ctr_weight],
+                        ["Targeting bonus", assignment.score_breakdown.targeting_bonus],
+                        [
+                          "Partner reject rate",
+                          `${(
+                            (assignment.score_breakdown.partner_reject_rate || 0) * 100
+                          ).toFixed(2)}%`
+                        ],
+                        [
+                          "Partner quality penalty",
+                          assignment.score_breakdown.partner_reject_penalty
+                        ],
+                        ["Total score", assignment.score_breakdown.total]
+                      ].map(([label, value]) => (
+                        <div className="table-row compact" key={label}>
+                          <span className="muted">{label}</span>
+                          <span>{value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                  <details className="score-legend">
+                    <summary>What do these numbers mean?</summary>
+                    <ul className="legend-list">
+                      <li>
+                        <strong>Profit</strong> — Expected profit for this impression.
+                      </li>
+                      <li>
+                        <strong>Smoothed CTR</strong> — Recent click-through rate estimate.
+                      </li>
+                      <li>
+                        <strong>CTR weight</strong> — How strongly CTR influences final score.
+                      </li>
+                      <li>
+                        <strong>Targeting bonus</strong> — Extra score for matching partner
+                        targeting.
+                      </li>
+                      <li>
+                        <strong>Partner reject rate</strong> — Partner’s recent rejected-click
+                        ratio.
+                      </li>
+                      <li>
+                        <strong>Partner quality penalty</strong> — Score reduction caused by
+                        partner reject rate.
+                      </li>
+                      <li>
+                        <strong>Total score</strong> — Final ranking score used by the matcher.
+                      </li>
+                    </ul>
+                  </details>
                 </div>
               </div>
             )}

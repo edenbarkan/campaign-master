@@ -37,12 +37,23 @@ const BuyerDashboardPage = () => {
     );
   }
 
-  const { daily, totals, campaigns } = data;
+  const { daily, totals, campaigns, delivery_status: deliveryStatus } = data;
 
   return (
     <main className="page dashboard">
       <section className="panel">
         <RoleHeader subtitle="Tracking spend, clicks, and efficiency." />
+        {deliveryStatus ? (
+          <div className="status-row">
+            <span className={`badge ${deliveryStatus.status.toLowerCase()}`}>
+              {deliveryStatus.status.replace("_", " ")}
+            </span>
+            <span className="muted">
+              Fill rate {(deliveryStatus.fill_rate * 100).toFixed(1)}% ·{" "}
+              {deliveryStatus.total_requests} requests
+            </span>
+          </div>
+        ) : null}
         <div className="metrics">
           <div className="metric-card">
             <p>Spend</p>
@@ -95,7 +106,8 @@ const BuyerDashboardPage = () => {
                 <div>
                   <p className="row-title">{campaign.name}</p>
                   <p className="muted">
-                    {campaign.status} · {campaign.clicks} clicks
+                    {campaign.status} · {campaign.clicks} clicks ·{" "}
+                    {(campaign.ctr * 100).toFixed(2)}% CTR
                   </p>
                 </div>
                 <div className="row-metrics">

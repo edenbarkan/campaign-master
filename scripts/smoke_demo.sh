@@ -93,13 +93,47 @@ curl -fsS "$BASE_URL/api/partner/analytics/summary" \
   -H "Authorization: Bearer $partner_token" > "$partner_before"
 
 ad_json=$(curl -fsS "$BASE_URL/api/partner/ad" -H "Authorization: Bearer $partner_token")
+filled=$(echo "$ad_json" | json_get '.filled')
 assignment_code=$(echo "$ad_json" | json_get '.assignment_code')
 tracking_path=$(echo "$ad_json" | json_get '.tracking_url')
+explanation=$(echo "$ad_json" | json_get '.explanation')
+score_profit=$(echo "$ad_json" | json_get '.score_breakdown.profit')
+score_reject_rate=$(echo "$ad_json" | json_get '.score_breakdown.partner_reject_rate')
+score_reject_penalty=$(echo "$ad_json" | json_get '.score_breakdown.partner_reject_penalty')
 tracking_url="$BASE_URL$tracking_path"
+
+if [ "$filled" != "true" ]; then
+  echo "Expected filled ad response." >&2
+  echo "$ad_json" >&2
+  exit 1
+fi
+
+if [ -z "$explanation" ] || [ -z "$score_profit" ] || [ -z "$score_reject_rate" ] || [ -z "$score_reject_penalty" ]; then
+  echo "Missing explanation or score_breakdown in ad response." >&2
+  exit 1
+fi
 
 if [ -z "$assignment_code" ] || [ -z "$tracking_path" ]; then
   echo "Missing assignment data from partner ad request." >&2
   exit 1
+fi
+
+second_json=$(curl -fsS "$BASE_URL/api/partner/ad" -H "Authorization: Bearer $partner_token")
+second_filled=$(echo "$second_json" | json_get '.filled')
+second_reason=$(echo "$second_json" | json_get '.reason')
+
+if [ "$second_filled" = "true" ]; then
+  second_ad_id=$(echo "$second_json" | json_get '.ad.id')
+  first_ad_id=$(echo "$ad_json" | json_get '.ad.id')
+  if [ "$second_ad_id" = "$first_ad_id" ]; then
+    echo "Frequency cap failed: received same ad twice." >&2
+    exit 1
+  fi
+else
+  if [ "$second_reason" != "FREQ_CAP" ] && [ "$second_reason" != "NO_ELIGIBLE_ADS" ]; then
+    echo "Unexpected unfilled reason: $second_reason" >&2
+    exit 1
+  fi
 fi
 
 headers=("-H" "User-Agent: smoke-agent" "-H" "X-Forwarded-For: 203.0.113.10")
@@ -160,6 +194,15 @@ if not math.isclose(spend_delta, max_cpc, abs_tol=0.01):
 
 if not math.isclose(earn_delta, partner_payout, abs_tol=0.01):
     print(f"FAIL earnings delta {earn_delta} != {partner_payout}")
+    sys.exit(1)
+
+total_requests = partner_after.get("total_requests", 0)
+unfilled_requests = partner_after.get("unfilled_requests", 0)
+if total_requests < 2:
+    print(f"FAIL expected at least 2 partner requests, got {total_requests}")
+    sys.exit(1)
+if unfilled_requests < 0:
+    print("FAIL invalid unfilled requests")
     sys.exit(1)
 
 rejected = risk.get("totals", {}).get("rejected", 0)

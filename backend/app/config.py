@@ -17,6 +17,13 @@ class Config:
     IMPRESSION_DEDUP_WINDOW_SECONDS = int(
         os.getenv("IMPRESSION_DEDUP_WINDOW_SECONDS", "60")
     )
+    FREQ_CAP_SECONDS = int(os.getenv("FREQ_CAP_SECONDS", "60"))
+    MATCH_CTR_LOOKBACK_DAYS = int(os.getenv("MATCH_CTR_LOOKBACK_DAYS", "14"))
+    MATCH_REJECT_LOOKBACK_DAYS = int(os.getenv("MATCH_REJECT_LOOKBACK_DAYS", "7"))
+    MATCH_CTR_WEIGHT = float(os.getenv("MATCH_CTR_WEIGHT", "1.0"))
+    MATCH_TARGETING_BONUS = float(os.getenv("MATCH_TARGETING_BONUS", "0.5"))
+    MATCH_REJECT_PENALTY_WEIGHT = float(os.getenv("MATCH_REJECT_PENALTY_WEIGHT", "1.0"))
+    MATCHING_DEBUG = os.getenv("MATCHING_DEBUG", "0")
 
 
 def load_platform_fee_percent(value):

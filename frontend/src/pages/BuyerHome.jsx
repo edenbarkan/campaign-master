@@ -23,6 +23,8 @@ const emptyForm = {
   max_cpc: "",
   targeting_category: "",
   targeting_geo: "",
+  targeting_device: "",
+  targeting_placement: "",
   start_date: "",
   end_date: ""
 };
@@ -90,7 +92,9 @@ const BuyerHome = () => {
       max_cpc: maxCpc,
       targeting: {
         category: form.targeting_category || null,
-        geo: form.targeting_geo || null
+        geo: form.targeting_geo || null,
+        device: form.targeting_device || null,
+        placement: form.targeting_placement || null
       },
       start_date: form.start_date || null,
       end_date: form.end_date || null
@@ -133,6 +137,8 @@ const BuyerHome = () => {
       max_cpc: campaign.max_cpc ?? campaign.buyer_cpc,
       targeting_category: campaign.targeting?.category || "",
       targeting_geo: campaign.targeting?.geo || "",
+      targeting_device: campaign.targeting?.device || "",
+      targeting_placement: campaign.targeting?.placement || "",
       start_date: campaign.start_date || "",
       end_date: campaign.end_date || ""
     });
@@ -239,6 +245,26 @@ const BuyerHome = () => {
               </div>
               <div className="field-row">
                 <label className="field">
+                  <span>Targeting device</span>
+                  <input
+                    name="targeting_device"
+                    value={form.targeting_device}
+                    onChange={handleChange}
+                    placeholder="Mobile"
+                  />
+                </label>
+                <label className="field">
+                  <span>Targeting placement</span>
+                  <input
+                    name="targeting_placement"
+                    value={form.targeting_placement}
+                    onChange={handleChange}
+                    placeholder="Sidebar"
+                  />
+                </label>
+              </div>
+              <div className="field-row">
+                <label className="field">
                   <span>Start date</span>
                   <input
                     name="start_date"
@@ -285,6 +311,11 @@ const BuyerHome = () => {
                       {campaign.status} · $
                       {(campaign.max_cpc ?? campaign.buyer_cpc).toFixed(2)} max CPC
                     </p>
+                    {campaign.delivery_status ? (
+                      <span className={`badge ${campaign.delivery_status.toLowerCase()}`}>
+                        {campaign.delivery_status.replace("_", " ")}
+                      </span>
+                    ) : null}
                   </div>
                   <div className="row-metrics">
                     <span>${campaign.budget_spent.toFixed(2)} spent</span>

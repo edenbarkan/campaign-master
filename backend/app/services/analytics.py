@@ -1,11 +1,14 @@
+import json
 from datetime import date, timedelta
 
 from sqlalchemy import case, func
 
 from app.extensions import db
+from app.models.ad import Ad
 from app.models.campaign import Campaign
 from app.models.click_event import ClickEvent
 from app.models.impression_event import ImpressionEvent
+from app.models.partner_ad_request_event import PartnerAdRequestEvent
 from app.models.user import User
 
 
@@ -186,6 +189,15 @@ def buyer_campaign_table(buyer_id):
         click_count = int(click_stats.clicks or 0)
         spend = float(click_stats.spend or 0)
 
+        impressions = (
+            db.session.query(func.count(ImpressionEvent.id))
+            .filter(ImpressionEvent.campaign_id == campaign.id)
+            .filter(ImpressionEvent.status == "ACCEPTED")
+            .scalar()
+            or 0
+        )
+        ctr = click_count / impressions if impressions else 0
+
         partner_rows = (
             db.session.query(
                 User.id,
@@ -210,6 +222,8 @@ def buyer_campaign_table(buyer_id):
                 "status": campaign.status,
                 "spend": spend,
                 "clicks": click_count,
+                "impressions": int(impressions),
+                "ctr": ctr,
                 "budget_remaining": float(campaign.budget_remaining),
                 "top_partners": [
                     {
@@ -250,6 +264,164 @@ def partner_campaign_table(partner_id):
         }
         for row in rows
     ]
+
+
+def partner_top_ads(partner_id, limit=5):
+    rows = (
+        db.session.query(
+            Ad.id,
+            Ad.title,
+            func.count(ClickEvent.id).label("clicks"),
+            func.sum(ClickEvent.earnings_delta).label("earnings"),
+        )
+        .join(ClickEvent, ClickEvent.ad_id == Ad.id)
+        .filter(ClickEvent.partner_id == partner_id)
+        .filter(ClickEvent.status == "ACCEPTED")
+        .group_by(Ad.id, Ad.title)
+        .order_by(func.sum(ClickEvent.earnings_delta).desc())
+        .limit(limit)
+        .all()
+    )
+
+    results = []
+    for row in rows:
+        impressions = (
+            db.session.query(func.count(ImpressionEvent.id))
+            .filter(ImpressionEvent.partner_id == partner_id)
+            .filter(ImpressionEvent.ad_id == row.id)
+            .filter(ImpressionEvent.status == "ACCEPTED")
+            .scalar()
+            or 0
+        )
+        ctr = int(row.clicks or 0) / impressions if impressions else 0
+        results.append(
+            {
+                "id": row.id,
+                "title": row.title,
+                "clicks": int(row.clicks or 0),
+                "earnings": float(row.earnings or 0),
+                "ctr": ctr,
+            }
+        )
+
+    return results
+
+
+def partner_request_stats(partner_id):
+    total_requests = (
+        PartnerAdRequestEvent.query.filter_by(partner_id=partner_id).count()
+    )
+    filled_requests = (
+        PartnerAdRequestEvent.query.filter_by(partner_id=partner_id, filled=True).count()
+    )
+    unfilled_requests = total_requests - filled_requests
+    fill_rate = filled_requests / total_requests if total_requests else 0
+    return {
+        "total_requests": total_requests,
+        "filled_requests": filled_requests,
+        "unfilled_requests": unfilled_requests,
+        "fill_rate": fill_rate,
+    }
+
+
+def partner_latest_request(partner_id):
+    event = (
+        PartnerAdRequestEvent.query.filter_by(partner_id=partner_id, filled=True)
+        .order_by(PartnerAdRequestEvent.created_at.desc())
+        .first()
+    )
+    if not event:
+        return None
+
+    breakdown = {}
+    if event.score_breakdown:
+        try:
+            breakdown = json.loads(event.score_breakdown)
+        except json.JSONDecodeError:
+            breakdown = {}
+
+    # Normalize partner-quality keys for legacy stored breakdowns.
+    if "partner_reject_penalty" not in breakdown and "reject_penalty" in breakdown:
+        breakdown["partner_reject_penalty"] = breakdown.get("reject_penalty", 0)
+    if "partner_reject_rate" not in breakdown:
+        breakdown["partner_reject_rate"] = 0
+    if "partner_reject_penalty_weight" not in breakdown:
+        breakdown["partner_reject_penalty_weight"] = 1
+
+    return {
+        "ad": {
+            "id": event.ad_id,
+            "title": event.ad.title if event.ad else None,
+        },
+        "explanation": event.explanation,
+        "score_breakdown": breakdown,
+        "created_at": event.created_at.isoformat() if event.created_at else None,
+    }
+
+
+def buyer_request_stats(buyer_id):
+    campaigns = Campaign.query.filter_by(buyer_id=buyer_id, status="active").all()
+    campaign_ids = [campaign.id for campaign in campaigns]
+    if not campaign_ids:
+        return {"fill_rate": 0, "total_requests": 0, "filled_requests": 0}
+
+    filled_requests = (
+        PartnerAdRequestEvent.query.filter(
+            PartnerAdRequestEvent.filled.is_(True),
+            PartnerAdRequestEvent.campaign_id.in_(campaign_ids),
+        ).count()
+    )
+
+    unfilled_events = PartnerAdRequestEvent.query.filter_by(filled=False).all()
+    unfilled_requests = 0
+    for event in unfilled_events:
+        for campaign in campaigns:
+            if campaign.targeting_category and event.category:
+                if campaign.targeting_category != event.category:
+                    continue
+            if campaign.targeting_geo and event.geo:
+                if campaign.targeting_geo != event.geo:
+                    continue
+            if campaign.targeting_device and event.device:
+                if campaign.targeting_device != event.device:
+                    continue
+            if campaign.targeting_placement and event.placement:
+                if campaign.targeting_placement != event.placement:
+                    continue
+            unfilled_requests += 1
+            break
+
+    total_requests = filled_requests + unfilled_requests
+    fill_rate = filled_requests / total_requests if total_requests else 0
+    return {
+        "fill_rate": fill_rate,
+        "total_requests": total_requests,
+        "filled_requests": filled_requests,
+    }
+
+
+def buyer_delivery_status(buyer_id):
+    stats = buyer_request_stats(buyer_id)
+    clicks = (
+        db.session.query(func.count(ClickEvent.id))
+        .join(Campaign, ClickEvent.campaign_id == Campaign.id)
+        .filter(Campaign.buyer_id == buyer_id)
+        .filter(ClickEvent.status == "ACCEPTED")
+        .scalar()
+        or 0
+    )
+    total_requests = stats["total_requests"]
+    fill_rate = stats["fill_rate"]
+    click_rate = clicks / total_requests if total_requests else 0
+    if total_requests >= 10 and (fill_rate < 0.5 or click_rate < 0.01):
+        status = "UNDER_DELIVERING"
+    else:
+        status = "ON_TRACK"
+    return {
+        "status": status,
+        "fill_rate": fill_rate,
+        "total_requests": total_requests,
+    }
 
 
 def admin_daily_metrics(days=14):
@@ -367,6 +539,84 @@ def partner_quality_summary(partner_id):
         "ctr": ctr,
         "epc": epc,
         "rejection_rate": rejection_rate,
+    }
+
+
+def admin_marketplace_health():
+    total_requests = PartnerAdRequestEvent.query.count()
+    filled_requests = PartnerAdRequestEvent.query.filter_by(filled=True).count()
+    fill_rate = filled_requests / total_requests if total_requests else 0
+
+    accepted_clicks = ClickEvent.query.filter_by(status="ACCEPTED").count()
+    rejected_clicks = ClickEvent.query.filter_by(status="REJECTED").count()
+    total_clicks = accepted_clicks + rejected_clicks
+    reject_rate = rejected_clicks / total_clicks if total_clicks else 0
+
+    spend = (
+        db.session.query(func.sum(ClickEvent.spend_delta))
+        .filter(ClickEvent.status == "ACCEPTED")
+        .scalar()
+        or 0
+    )
+    profit = (
+        db.session.query(func.sum(ClickEvent.profit_delta))
+        .filter(ClickEvent.status == "ACCEPTED")
+        .scalar()
+        or 0
+    )
+    take_rate = float(profit) / float(spend) if spend else 0
+
+    buyer_rows = (
+        db.session.query(User.id, User.email)
+        .join(Campaign, Campaign.buyer_id == User.id)
+        .filter(User.role == "buyer")
+        .group_by(User.id, User.email)
+        .all()
+    )
+    under_delivering = []
+    for row in buyer_rows:
+        stats = buyer_request_stats(row.id)
+        delivery = buyer_delivery_status(row.id)
+        under_delivering.append(
+            {
+                "id": row.id,
+                "email": row.email,
+                "fill_rate": stats["fill_rate"],
+                "clicks": (
+                    db.session.query(func.count(ClickEvent.id))
+                    .join(Campaign, ClickEvent.campaign_id == Campaign.id)
+                    .filter(Campaign.buyer_id == row.id)
+                    .filter(ClickEvent.status == "ACCEPTED")
+                    .scalar()
+                    or 0
+                ),
+                "status": delivery["status"],
+            }
+        )
+
+    under_delivering.sort(key=lambda item: (item["fill_rate"], item["clicks"]))
+
+    partner_rows = User.query.filter_by(role="partner").all()
+    low_quality = []
+    for partner in partner_rows:
+        quality = partner_quality_summary(partner.id)
+        low_quality.append(
+            {
+                "id": partner.id,
+                "email": partner.email,
+                "rejection_rate": quality["rejection_rate"],
+                "ctr": quality["ctr"],
+            }
+        )
+    low_quality.sort(key=lambda item: (-item["rejection_rate"], item["ctr"]))
+
+    return {
+        "fill_rate": fill_rate,
+        "reject_rate": reject_rate,
+        "profit": float(profit or 0),
+        "take_rate": take_rate,
+        "top_under_delivering_buyers": under_delivering[:5],
+        "top_low_quality_partners": low_quality[:5],
     }
 
 

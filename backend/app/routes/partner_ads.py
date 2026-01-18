@@ -1,10 +1,14 @@
 import secrets
 
-from flask import Blueprint, jsonify, request
+import json
+
+from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import get_jwt_identity
 
 from app.auth.decorators import roles_required
 from app.extensions import db
+from app.models.partner_ad_exposure import PartnerAdExposure
+from app.models.partner_ad_request_event import PartnerAdRequestEvent
 from app.models.assignment import AdAssignment
 from app.services.matching import select_ad_for_partner
 
@@ -18,8 +22,9 @@ def generate_code():
             return code
 
 
-def ad_payload(ad, campaign, assignment):
+def ad_payload(ad, campaign, assignment, explanation, score_breakdown):
     return {
+        "filled": True,
         "assignment_code": assignment.code,
         "tracking_url": f"/t/{assignment.code}",
         "campaign": {
@@ -34,6 +39,8 @@ def ad_payload(ad, campaign, assignment):
             "image_url": ad.image_url,
             "destination_url": ad.destination_url,
         },
+        "explanation": explanation,
+        "score_breakdown": score_breakdown,
     }
 
 
@@ -50,11 +57,41 @@ def request_ad():
     placement = (request.args.get("placement") or "").strip() or None
     device = (request.args.get("device") or "").strip() or None
 
-    ad, campaign = select_ad_for_partner(
-        partner_id, category=category, geo=geo, device=device, placement=placement
+    # Optional debug mode returns top candidate breakdowns for QA only.
+    result = select_ad_for_partner(
+        partner_id,
+        category=category,
+        geo=geo,
+        device=device,
+        placement=placement,
+        freq_cap_seconds=current_app.config.get("FREQ_CAP_SECONDS", 60),
+        ctr_lookback_days=current_app.config.get("MATCH_CTR_LOOKBACK_DAYS", 14),
+        reject_lookback_days=current_app.config.get("MATCH_REJECT_LOOKBACK_DAYS", 7),
+        ctr_weight=current_app.config.get("MATCH_CTR_WEIGHT", 1.0),
+        targeting_bonus_value=current_app.config.get("MATCH_TARGETING_BONUS", 0.5),
+        reject_penalty_weight=current_app.config.get("MATCH_REJECT_PENALTY_WEIGHT", 1.0),
+        debug=str(current_app.config.get("MATCHING_DEBUG", "0")).lower()
+        in ("1", "true", "yes"),
+        debug_limit=3,
     )
-    if not ad or not campaign:
-        return jsonify({"error": "no_fill"}), 404
+    if not result.ad or not result.campaign:
+        request_event = PartnerAdRequestEvent(
+            partner_id=partner_id,
+            placement=placement,
+            device=device,
+            geo=geo,
+            category=category,
+            filled=False,
+        )
+        db.session.add(request_event)
+        db.session.commit()
+        response = {"filled": False, "reason": result.unfilled_reason}
+        if result.debug_candidates is not None:
+            response["debug_candidates"] = result.debug_candidates
+        return jsonify(response), 200
+
+    ad = result.ad
+    campaign = result.campaign
 
     assignment = AdAssignment(
         code=generate_code(),
@@ -69,4 +106,34 @@ def request_ad():
     db.session.add(assignment)
     db.session.commit()
 
-    return jsonify(ad_payload(ad, campaign, assignment))
+    exposure = PartnerAdExposure.query.filter_by(partner_id=partner_id, ad_id=ad.id).first()
+    if exposure:
+        exposure.last_served_at = db.func.now()
+    else:
+        db.session.add(
+            PartnerAdExposure(
+                partner_id=partner_id,
+                ad_id=ad.id,
+            )
+        )
+
+    request_event = PartnerAdRequestEvent(
+        partner_id=partner_id,
+        placement=placement,
+        device=device,
+        geo=geo,
+        category=category,
+        filled=True,
+        ad_id=ad.id,
+        campaign_id=campaign.id,
+        assignment_code=assignment.code,
+        explanation=result.explanation,
+        score_breakdown=json.dumps(result.score_breakdown),
+    )
+    db.session.add(request_event)
+    db.session.commit()
+
+    response = ad_payload(ad, campaign, assignment, result.explanation, result.score_breakdown)
+    if result.debug_candidates is not None:
+        response["debug_candidates"] = result.debug_candidates
+    return jsonify(response)

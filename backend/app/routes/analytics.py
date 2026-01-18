@@ -9,12 +9,17 @@ from app.services.analytics import (
     admin_risk_summary,
     admin_risk_top_partners,
     admin_daily_metrics,
+    admin_marketplace_health,
     admin_top_campaigns,
     admin_top_partners,
+    buyer_delivery_status,
     buyer_campaign_table,
     buyer_daily_metrics,
     partner_campaign_table,
     partner_daily_metrics,
+    partner_latest_request,
+    partner_request_stats,
+    partner_top_ads,
     partner_quality_summary,
 )
 
@@ -48,6 +53,7 @@ def buyer_summary():
                 "cost_efficiency": cost_efficiency,
             },
             "campaigns": buyer_campaign_table(buyer_id),
+            "delivery_status": buyer_delivery_status(buyer_id),
         }
     )
 
@@ -62,21 +68,31 @@ def partner_summary():
 
     daily = partner_daily_metrics(partner_id)
     earnings_total = sum(item["earnings"] for item in daily)
-    clicks_total = sum(item["clicks"] for item in daily)
-    impressions_total = sum(item["impressions"] for item in daily)
-
-    epc = earnings_total / clicks_total if clicks_total else 0
+    accepted_clicks = sum(item["clicks"] for item in daily)
+    accepted_impressions = sum(item["impressions"] for item in daily)
+    epc = earnings_total / accepted_clicks if accepted_clicks else 0
+    ctr = accepted_clicks / accepted_impressions if accepted_impressions else 0
+    request_stats = partner_request_stats(partner_id)
 
     return jsonify(
         {
             "daily": daily,
             "totals": {
                 "earnings": earnings_total,
-                "clicks": clicks_total,
-                "impressions": impressions_total,
+                "clicks": accepted_clicks,
+                "accepted_clicks": accepted_clicks,
+                "accepted_impressions": accepted_impressions,
+                "impressions": accepted_impressions,
+                "ctr": ctr,
                 "epc": epc,
             },
             "campaigns": partner_campaign_table(partner_id),
+            "fill_rate": request_stats["fill_rate"],
+            "unfilled_requests": request_stats["unfilled_requests"],
+            "total_requests": request_stats["total_requests"],
+            "filled_requests": request_stats["filled_requests"],
+            "top_ads": partner_top_ads(partner_id),
+            "latest_request": partner_latest_request(partner_id),
         }
     )
 
@@ -113,6 +129,7 @@ def admin_summary():
             },
             "top_campaigns": admin_top_campaigns(),
             "top_partners": admin_top_partners(),
+            "marketplace_health": admin_marketplace_health(),
         }
     )
 

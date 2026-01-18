@@ -20,6 +20,9 @@ services:
       JWT_SECRET_KEY: dev-jwt-secret
       SECRET_KEY: dev-secret
       PLATFORM_FEE_PERCENT: 30
+      MATCHING_DEBUG: ${MATCHING_DEBUG:-0}
+      FREQ_CAP_SECONDS: ${FREQ_CAP_SECONDS:-60}
+      MATCH_REJECT_PENALTY_WEIGHT: ${MATCH_REJECT_PENALTY_WEIGHT:-1.0}
     depends_on:
       - db
 
