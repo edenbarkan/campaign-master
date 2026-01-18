@@ -237,40 +237,80 @@ const PartnerHome = () => {
             <h2>Get an ad</h2>
             <div className="form">
               <label className="field">
-                <span title={UI_STRINGS.partner.filterCategoryTooltip}>Category</span>
+                <span className="field-label">
+                  Category
+                  <span
+                    className="tooltip"
+                    tabIndex="0"
+                    data-tooltip={UI_STRINGS.partner.filterCategoryTooltip}
+                  >
+                    i
+                  </span>
+                </span>
                 <input
                   name="category"
                   value={filters.category}
                   onChange={handleChange}
                   placeholder="Fitness"
                 />
+                <span className="helper-text">{UI_STRINGS.partner.filterCategoryTooltip}</span>
               </label>
               <label className="field">
-                <span title={UI_STRINGS.partner.filterGeoTooltip}>Geo</span>
+                <span className="field-label">
+                  Geo
+                  <span
+                    className="tooltip"
+                    tabIndex="0"
+                    data-tooltip={UI_STRINGS.partner.filterGeoTooltip}
+                  >
+                    i
+                  </span>
+                </span>
                 <input
                   name="geo"
                   value={filters.geo}
                   onChange={handleChange}
                   placeholder="US"
                 />
+                <span className="helper-text">{UI_STRINGS.partner.filterGeoTooltip}</span>
               </label>
               <label className="field">
-                <span title={UI_STRINGS.partner.filterPlacementTooltip}>Placement</span>
+                <span className="field-label">
+                  Placement
+                  <span
+                    className="tooltip"
+                    tabIndex="0"
+                    data-tooltip={UI_STRINGS.partner.filterPlacementTooltip}
+                  >
+                    i
+                  </span>
+                </span>
                 <input
                   name="placement"
                   value={filters.placement}
                   onChange={handleChange}
                   placeholder="Sidebar"
                 />
+                <span className="helper-text">{UI_STRINGS.partner.filterPlacementTooltip}</span>
               </label>
               <label className="field">
-                <span title={UI_STRINGS.partner.filterDeviceTooltip}>Device</span>
+                <span className="field-label">
+                  Device
+                  <span
+                    className="tooltip"
+                    tabIndex="0"
+                    data-tooltip={UI_STRINGS.partner.filterDeviceTooltip}
+                  >
+                    i
+                  </span>
+                </span>
                 <input
                   name="device"
                   value={filters.device}
                   onChange={handleChange}
                   placeholder="Mobile"
                 />
+                <span className="helper-text">{UI_STRINGS.partner.filterDeviceTooltip}</span>
               </label>
               <button className="button primary" type="button" onClick={requestAd}>
                 {loading ? "Requesting..." : "Request ad"}

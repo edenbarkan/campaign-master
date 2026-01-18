@@ -14,7 +14,7 @@
 4) Open "Get Ad" page and request an ad.
 5) Confirm "Why this ad?" shows TL;DR bullets in Simple view and full breakdown in Advanced view.
 6) Hover "Record impression" and "Test click" to confirm tooltips appear.
-7) Hover the Partner filter labels to confirm targeting tooltips appear.
+7) Hover the Partner filter labels or info icons to confirm tooltips appear (inline helper text is also acceptable).
 8) If the ad image is blocked, verify the preview fallback card renders with title/body/domain.
 9) Use the header "How it works" link, then click "Restart onboarding" and confirm the nudge reappears on dashboard.
 10) Confirm the onboarding nudge banner shows once, then stays dismissed on reload.

@@ -109,7 +109,7 @@ export const HOW_IT_WORKS = {
     summary: [
       "Monitor marketplace health and risk trends.",
       "Reject reasons highlight traffic quality issues.",
-      "Fill rate and take rate show marketplace balance.",
+      "Fill rate and profit show marketplace balance.",
       "Scoring only changes ranking — billing stays consistent."
     ],
     examples: [
