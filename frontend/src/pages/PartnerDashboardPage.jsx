@@ -110,31 +110,31 @@ const PartnerDashboardPage = () => {
     : [];
   const qualityAlerts = {
     NEW: {
-      label: "NEW",
+      label: "~ NEW",
       tone: "new",
       note: "Building history. Keep traffic clean to establish a strong baseline.",
       tooltip: "Early data only. Quality signals will stabilize with more traffic."
     },
     STABLE: {
-      label: "STABLE",
+      label: "OK STABLE",
       tone: "stable",
       note: "Quality is within normal range.",
       tooltip: "Stable quality signal."
     },
     AT_RISK: {
-      label: "AT RISK",
+      label: "! AT RISK",
       tone: "at-risk",
       note: "Quality is slipping. Reduce rapid refreshes and retries.",
       tooltip: "Rising reject rate for this partner."
     },
     RISKY: {
-      label: "RISKY",
+      label: "!! RISKY",
       tone: "risky",
       note: "At risk: reduce repeat clicks and avoid rapid refreshes.",
       tooltip: "Elevated reject rate for this partner."
     },
     RECOVERING: {
-      label: "RECOVERING",
+      label: "~ RECOVERING",
       tone: "recovering",
       note: "Improving quality. Keep traffic steady and policy-compliant.",
       tooltip: "Quality is improving after recent rejects."
@@ -178,7 +178,7 @@ const PartnerDashboardPage = () => {
     <main className="page dashboard">
         <section className="panel">
           <RoleHeader subtitle={UI_STRINGS.partner.dashboardSubtitle} />
-        <div className="view-toggle" role="group" aria-label="Partner view mode">
+        <div className="view-toggle tabs" role="group" aria-label="Partner view mode">
             <button
               type="button"
               className={`toggle-button ${!isAdvanced ? "active" : ""}`}

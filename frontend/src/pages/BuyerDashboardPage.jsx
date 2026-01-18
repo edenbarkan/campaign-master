@@ -70,7 +70,7 @@ const BuyerDashboardPage = () => {
     <main className="page dashboard">
       <section className="panel">
         <RoleHeader subtitle={UI_STRINGS.buyer.dashboardSubtitle} />
-        <div className="view-toggle" role="group" aria-label="Buyer view mode">
+        <div className="view-toggle tabs" role="group" aria-label="Buyer view mode">
           <button
             type="button"
             className={`toggle-button ${!isAdvanced ? "active" : ""}`}

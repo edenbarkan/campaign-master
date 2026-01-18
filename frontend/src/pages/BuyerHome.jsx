@@ -43,10 +43,16 @@ const BuyerHome = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [platformFeePercent, setPlatformFeePercent] = useState(30);
-  const computedPayout = computePayout(Number(form.max_cpc), platformFeePercent);
-  const remainingBudget = round2(
-    Math.max(0, Number(form.budget_total || 0) - Number(form.budget_spent || 0))
-  );
+  const maxCpcValue = Number(form.max_cpc);
+  const budgetTotalValue = Number(form.budget_total);
+  const budgetSpentValue = Number(form.budget_spent || 0);
+  const computedPayout = Number.isFinite(maxCpcValue)
+    ? computePayout(maxCpcValue, platformFeePercent)
+    : null;
+  const remainingBudget =
+    Number.isFinite(budgetTotalValue) && Number.isFinite(budgetSpentValue)
+      ? round2(Math.max(0, budgetTotalValue - budgetSpentValue))
+      : null;
   const isAdvanced = viewMode === "advanced";
   const formatMoney = (value) => {
     const parsed = Number(value);
@@ -179,7 +185,7 @@ const BuyerHome = () => {
           title={`Hello, ${user?.email}`}
           subtitle={UI_STRINGS.buyer.launchSubtitle}
         />
-        <div className="view-toggle" role="group" aria-label="Buyer view mode">
+        <div className="view-toggle tabs" role="group" aria-label="Buyer view mode">
           <button
             type="button"
             className={`toggle-button ${!isAdvanced ? "active" : ""}`}
@@ -249,17 +255,16 @@ const BuyerHome = () => {
               <div className="field-row">
                 <label className="field">
                   <span>Platform fee</span>
-                  <input
-                    value={`${platformFeePercent}%`}
-                    readOnly
-                  />
+                  <input value={`${platformFeePercent}%`} readOnly />
                 </label>
                 <label className="field">
                   <span title={UI_STRINGS.common.partnerPayoutTooltip}>
                     Partner payout (estimated)
                   </span>
                   <input
-                    value={`$${computedPayout.toFixed(2)}`}
+                    value={
+                      computedPayout === null ? "--" : `$${computedPayout.toFixed(2)}`
+                    }
                     readOnly
                   />
                 </label>
@@ -267,9 +272,15 @@ const BuyerHome = () => {
               <div className="field-row">
                 <label className="field">
                   <span>Remaining budget (est.)</span>
-                  <input value={`$${remainingBudget.toFixed(2)}`} readOnly />
+                  <input
+                    value={remainingBudget === null ? "--" : `$${remainingBudget.toFixed(2)}`}
+                    readOnly
+                  />
                 </label>
               </div>
+              <span className="helper-text">
+                Estimates update as you edit. Final values come from accepted clicks.
+              </span>
               {isAdvanced ? (
                 <>
                   <div className="field-row">

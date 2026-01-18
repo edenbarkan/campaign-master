@@ -13,8 +13,9 @@
 4) Open "Get Ad" page and request an ad.
 5) Confirm "Why this ad?" shows TL;DR bullets in Simple view and full breakdown in Advanced view.
 6) Hover "Record impression" and "Test click" to confirm tooltips appear.
-7) Use the header "How it works" link and confirm Partner-specific content loads.
-8) Confirm onboarding overlay shows once, then stays dismissed on reload.
+7) Hover the Partner filter labels to confirm targeting tooltips appear.
+8) Use the header "How it works" link and confirm Partner-specific content loads.
+9) Confirm onboarding overlay shows once, then stays dismissed on reload.
 
 ## Buyer flow
 1) Logout, then login as `buyer@demo.com` / `buyerpass`.

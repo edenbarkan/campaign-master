@@ -148,27 +148,27 @@ const PartnerHome = () => {
     : [];
   const qualityStates = {
     NEW: {
-      label: "NEW",
+      label: "~ NEW",
       tone: "new",
       tooltip: "New partner signal. Quality will stabilize with more data."
     },
     STABLE: {
-      label: "STABLE",
+      label: "OK STABLE",
       tone: "stable",
       tooltip: "Stable quality signal."
     },
     AT_RISK: {
-      label: "AT RISK",
+      label: "! AT RISK",
       tone: "at-risk",
       tooltip: "Rising reject rate. Avoid rapid refreshes."
     },
     RISKY: {
-      label: "RISKY",
+      label: "!! RISKY",
       tone: "risky",
       tooltip: "High reject rate. Reduce duplicate clicks."
     },
     RECOVERING: {
-      label: "RECOVERING",
+      label: "~ RECOVERING",
       tone: "recovering",
       tooltip: "Quality is improving after recent rejects."
     }
@@ -184,7 +184,7 @@ const PartnerHome = () => {
           title={`Welcome, ${user?.email}`}
           subtitle={UI_STRINGS.partner.welcomeSubtitle}
         />
-        <div className="view-toggle" role="group" aria-label="Partner view mode">
+        <div className="view-toggle tabs" role="group" aria-label="Partner view mode">
           <button
             type="button"
             className={`toggle-button ${!isAdvanced ? "active" : ""}`}
@@ -208,7 +208,7 @@ const PartnerHome = () => {
             <h2>Get an ad</h2>
             <div className="form">
               <label className="field">
-                <span>Category</span>
+                <span title={UI_STRINGS.partner.filterCategoryTooltip}>Category</span>
                 <input
                   name="category"
                   value={filters.category}
@@ -217,7 +217,7 @@ const PartnerHome = () => {
                 />
               </label>
               <label className="field">
-                <span>Geo</span>
+                <span title={UI_STRINGS.partner.filterGeoTooltip}>Geo</span>
                 <input
                   name="geo"
                   value={filters.geo}
@@ -226,7 +226,7 @@ const PartnerHome = () => {
                 />
               </label>
               <label className="field">
-                <span>Placement</span>
+                <span title={UI_STRINGS.partner.filterPlacementTooltip}>Placement</span>
                 <input
                   name="placement"
                   value={filters.placement}
@@ -235,7 +235,7 @@ const PartnerHome = () => {
                 />
               </label>
               <label className="field">
-                <span>Device</span>
+                <span title={UI_STRINGS.partner.filterDeviceTooltip}>Device</span>
                 <input
                   name="device"
                   value={filters.device}

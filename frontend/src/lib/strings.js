@@ -19,7 +19,11 @@ export const UI_STRINGS = {
   partner: {
     welcomeSubtitle: "Request a fresh ad and start earning.",
     dashboardSubtitle: "Tracking earnings and click quality.",
-    getAdCta: "Get a fresh ad"
+    getAdCta: "Get a fresh ad",
+    filterCategoryTooltip: "Optional targeting hint for campaign category.",
+    filterGeoTooltip: "Optional location hint (country or region).",
+    filterPlacementTooltip: "Optional placement label (e.g., sidebar, inline).",
+    filterDeviceTooltip: "Optional device hint (mobile, desktop)."
   },
   buyer: {
     dashboardSubtitle: "Tracking spend, clicks, and efficiency.",

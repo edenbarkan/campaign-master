@@ -236,6 +236,15 @@ select:focus-visible {
   margin-top: 12px;
 }
 
+.view-toggle.tabs {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  gap: 6px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
 .toggle-button {
   border: 1px solid transparent;
   padding: 7px 16px;
@@ -252,6 +261,23 @@ select:focus-visible {
   color: #0f766e;
   box-shadow: 0 8px 16px rgba(15, 118, 110, 0.18);
   border: 1px solid rgba(15, 118, 110, 0.7);
+}
+
+.view-toggle.tabs .toggle-button {
+  border-radius: 0;
+  border: none;
+  padding: 10px 14px;
+  background: transparent;
+  box-shadow: none;
+  color: #6b7280;
+  border-bottom: 2px solid transparent;
+}
+
+.view-toggle.tabs .toggle-button.active {
+  color: #0f766e;
+  border-bottom: 2px solid #0f766e;
+  background: #ffffff;
+  font-weight: 700;
 }
 
 .toggle-hint {
