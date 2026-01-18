@@ -12,7 +12,8 @@ export const UI_STRINGS = {
     partnerPayoutTooltip: "Computed as Max CPC × (1 - platform fee).",
     statusHelper: "Status affects delivery. Paused campaigns will not serve.",
     imageUrlHelper: "Use a full https:// image URL.",
-    destinationUrlHelper: "Use the final landing page URL."
+    destinationUrlHelper: "Use the final landing page URL.",
+    howItWorksLabel: "How it works"
   },
   partner: {
     welcomeSubtitle: "Request a fresh ad and start earning.",

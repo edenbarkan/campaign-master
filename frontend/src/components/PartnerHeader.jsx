@@ -2,12 +2,14 @@ import React from "react";
 import { Link } from "react-router-dom";
 
 import { useAuth } from "../contexts/AuthContext";
+import { UI_STRINGS } from "../lib/strings";
 
 const PartnerHeader = ({ title, subtitle }) => {
   const { user, logout } = useAuth();
   const links = [
     { to: "/partner/dashboard", label: "Dashboard" },
-    { to: "/partner/get-ad", label: "Get Ad" }
+    { to: "/partner/get-ad", label: "Get Ad" },
+    { to: "/partner/how-it-works", label: UI_STRINGS.common.howItWorksLabel }
   ];
 
   return (

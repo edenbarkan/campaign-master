@@ -57,6 +57,14 @@ const BuyerDashboardPage = () => {
   }
 
   const { daily, totals, campaigns, delivery_status: deliveryStatus } = data;
+  const totalBudgetLeft = (campaigns || []).reduce(
+    (acc, campaign) => acc + Number(campaign.budget_remaining || 0),
+    0
+  );
+  const maxCpcValue = (campaigns || []).reduce((acc, campaign) => {
+    const value = Number(campaign.max_cpc ?? campaign.buyer_cpc ?? 0);
+    return value > acc ? value : acc;
+  }, 0);
 
   return (
     <main className="page dashboard">
@@ -85,10 +93,6 @@ const BuyerDashboardPage = () => {
             <span className={`badge ${deliveryStatus.status.toLowerCase()}`}>
               {deliveryStatus.status.replace("_", " ")}
             </span>
-            <span className="muted">
-              Fill rate {(deliveryStatus.fill_rate * 100).toFixed(1)}% ·{" "}
-              {deliveryStatus.total_requests} requests
-            </span>
             {deliveryStatus.note ? (
               <span className="muted">{deliveryStatus.note}</span>
             ) : null}
@@ -114,6 +118,14 @@ const BuyerDashboardPage = () => {
               <div className="metric-card">
                 <p>Clicks</p>
                 <h3>{totals.clicks}</h3>
+              </div>
+              <div className="metric-card">
+                <p>Budget left</p>
+                <h3>${totalBudgetLeft.toFixed(2)}</h3>
+              </div>
+              <div className="metric-card">
+                <p>Max CPC</p>
+                <h3>${maxCpcValue.toFixed(2)}</h3>
               </div>
               <div className="metric-card">
                 <p>Cost efficiency</p>

@@ -3,12 +3,15 @@ import { Navigate, Route, Routes } from "react-router-dom";
 
 import { useAuth } from "./contexts/AuthContext";
 import AdminDashboardPage from "./pages/AdminDashboardPage.jsx";
+import AdminHowItWorks from "./pages/AdminHowItWorks.jsx";
 import BuyerDashboardPage from "./pages/BuyerDashboardPage.jsx";
 import BuyerHome from "./pages/BuyerHome.jsx";
+import BuyerHowItWorks from "./pages/BuyerHowItWorks.jsx";
 import CampaignDetailPage from "./pages/CampaignDetailPage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import PartnerDashboardPage from "./pages/PartnerDashboardPage.jsx";
 import PartnerHome from "./pages/PartnerHome.jsx";
+import PartnerHowItWorks from "./pages/PartnerHowItWorks.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
 
 const normalizeRole = (role) => (role ? role.toUpperCase() : "");
@@ -101,6 +104,14 @@ const App = () => {
         }
       />
       <Route
+        path="/buyer/how-it-works"
+        element={
+          <ProtectedRoute role="BUYER">
+            <BuyerHowItWorks />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/buyer/campaigns/:campaignId"
         element={
           <ProtectedRoute role="BUYER">
@@ -125,6 +136,14 @@ const App = () => {
         }
       />
       <Route
+        path="/admin/how-it-works"
+        element={
+          <ProtectedRoute role="ADMIN">
+            <AdminHowItWorks />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/partner/dashboard"
         element={
           <ProtectedRoute role="PARTNER">
@@ -137,6 +156,14 @@ const App = () => {
         element={
           <ProtectedRoute role="PARTNER">
             <PartnerHome />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/partner/how-it-works"
+        element={
+          <ProtectedRoute role="PARTNER">
+            <PartnerHowItWorks />
           </ProtectedRoute>
         }
       />

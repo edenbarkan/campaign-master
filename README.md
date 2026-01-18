@@ -126,7 +126,9 @@ Key env knobs:
 - Simple/Advanced view toggles for Buyer and Partner pages (persisted in localStorage).
 - Role-based onboarding overlay (dismissed once per role).
 - "Market Stability Guard" note clarifies scoring is rank-only.
+- Partner quality badge highlights state with tooltip guidance.
 - Admin 7d/30d/90d date range filter + reject-reason drill-down panel.
+- "How it works" pages are linked in each role header (Buyer/Partner/Admin) with glossary + FAQs.
 
 Atlas E2E plan: `docs/atlas_e2e_plan.md`.
 

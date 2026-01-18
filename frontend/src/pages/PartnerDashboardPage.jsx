@@ -110,24 +110,28 @@ const PartnerDashboardPage = () => {
     : [];
   const qualityAlerts = {
     NEW: {
-      label: "New",
+      label: "! NEW",
       tone: "new",
-      note: "Building history. Keep traffic clean to establish a strong baseline."
+      note: "Building history. Keep traffic clean to establish a strong baseline.",
+      tooltip: "Early data only. Quality signals will stabilize with more traffic."
     },
     STABLE: {
-      label: "Stable",
+      label: "OK STABLE",
       tone: "stable",
-      note: "Quality is within normal range."
+      note: "Quality is within normal range.",
+      tooltip: "Stable quality signal."
     },
     RISKY: {
-      label: "At risk",
+      label: "! AT RISK",
       tone: "risky",
-      note: "At risk: reduce repeat clicks and avoid rapid refreshes."
+      note: "At risk: reduce repeat clicks and avoid rapid refreshes.",
+      tooltip: "Elevated reject rate for this partner."
     },
     RECOVERING: {
-      label: "Recovering",
+      label: "~ RECOVERING",
       tone: "recovering",
-      note: "Improving quality. Keep traffic steady and policy-compliant."
+      note: "Improving quality. Keep traffic steady and policy-compliant.",
+      tooltip: "Quality is improving after recent rejects."
     }
   };
   const qualityAlert = partnerQualityState ? qualityAlerts[partnerQualityState] : null;
@@ -236,7 +240,12 @@ const PartnerDashboardPage = () => {
         {partnerQualityNote ? <p className="muted">{partnerQualityNote}</p> : null}
         {qualityAlert ? (
           <div className="quality-alert">
-            <span className={`badge ${qualityAlert.tone}`}>{qualityAlert.label}</span>
+            <span
+              className={`badge ${qualityAlert.tone}`}
+              title={qualityAlert.tooltip}
+            >
+              {qualityAlert.label}
+            </span>
             <span className="muted">{qualityAlert.note}</span>
           </div>
         ) : null}

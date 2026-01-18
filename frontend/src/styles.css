@@ -76,6 +76,18 @@ h1 {
   color: #6b7280;
 }
 
+.help-section h2 {
+  margin-bottom: 10px;
+}
+
+.help-list {
+  margin: 0;
+  padding-left: 18px;
+  color: #4b5563;
+  display: grid;
+  gap: 6px;
+}
+
 input,
 select,
 textarea {
@@ -225,11 +237,14 @@ select:focus-visible {
   font-weight: 600;
   font-size: 13px;
   cursor: pointer;
+  color: #4b5563;
 }
 
 .toggle-button.active {
   background: #0f766e;
   color: #ffffff;
+  box-shadow: 0 8px 16px rgba(15, 118, 110, 0.25);
+  border: 1px solid rgba(15, 118, 110, 0.6);
 }
 
 .simple-cta {

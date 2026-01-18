@@ -2,12 +2,14 @@ import React from "react";
 import { Link } from "react-router-dom";
 
 import { useAuth } from "../contexts/AuthContext";
+import { UI_STRINGS } from "../lib/strings";
 
 const BuyerHeader = ({ title, subtitle }) => {
   const { user, logout } = useAuth();
   const links = [
     { to: "/buyer/dashboard", label: "Dashboard" },
-    { to: "/buyer/campaigns", label: "Campaigns" }
+    { to: "/buyer/campaigns", label: "Campaigns" },
+    { to: "/buyer/how-it-works", label: UI_STRINGS.common.howItWorksLabel }
   ];
 
   return (

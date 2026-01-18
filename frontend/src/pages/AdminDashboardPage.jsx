@@ -96,27 +96,32 @@ const AdminDashboardPage = () => {
   const reasonDetails = {
     DUPLICATE_CLICK: {
       title: "Duplicate click",
-      detail: "Multiple clicks from the same IP within the duplicate window.",
+      meaning: "Multiple clicks from the same IP within the duplicate window.",
+      why: "Often caused by rapid refreshes, aggressive retries, or click spamming.",
       mitigation: "Encourage unique traffic and avoid rapid retries."
     },
     RATE_LIMIT: {
       title: "Rate limit",
-      detail: "Click velocity exceeded the per-minute cap.",
+      meaning: "Click velocity exceeded the per-minute cap.",
+      why: "Traffic spikes from a single source can trip velocity limits.",
       mitigation: "Throttle high-velocity sources and smooth traffic bursts."
     },
     BUDGET_EXHAUSTED: {
       title: "Budget exhausted",
-      detail: "Campaign budget could not cover the max CPC.",
+      meaning: "Campaign budget could not cover the max CPC.",
+      why: "The remaining balance is below the campaign's max CPC.",
       mitigation: "Increase budget or lower max CPC to resume delivery."
     },
     INVALID_ASSIGNMENT: {
       title: "Invalid assignment",
-      detail: "Tracking code not found or expired.",
+      meaning: "Tracking code not found or expired.",
+      why: "Old or malformed tracking URLs were used in placements.",
       mitigation: "Ensure ads use the latest tracking URL."
     },
     BOT_SUSPECTED: {
       title: "Bot suspected",
-      detail: "Missing or empty user-agent signal.",
+      meaning: "Missing or empty user-agent signal.",
+      why: "Automated requests or stripped headers can trigger bot suspicion.",
       mitigation: "Filter automated traffic and ensure UA is passed."
     }
   };
@@ -136,6 +141,7 @@ const AdminDashboardPage = () => {
               className={`toggle-button ${rangeDays === days ? "active" : ""}`}
               onClick={() => setRangeDays(days)}
               aria-pressed={rangeDays === days}
+              title={`Show the last ${days} days`}
             >
               {days}d
             </button>
@@ -298,6 +304,7 @@ const AdminDashboardPage = () => {
                   type="button"
                   className="table-row compact button-row"
                   onClick={() => setSelectedReason(reason.reason)}
+                  title="Select to view details and mitigation tips."
                 >
                   <span className="muted">{reason.reason}</span>
                   <span>{reason.count}</span>
@@ -307,8 +314,15 @@ const AdminDashboardPage = () => {
             {selectedReasonDetail ? (
               <div className="detail-panel">
                 <p className="row-title">{selectedReasonDetail.title}</p>
-                <p className="muted">{selectedReasonDetail.detail}</p>
-                <p className="muted">{selectedReasonDetail.mitigation}</p>
+                <p className="muted">
+                  <strong>Meaning:</strong> {selectedReasonDetail.meaning}
+                </p>
+                <p className="muted">
+                  <strong>Why it happens:</strong> {selectedReasonDetail.why}
+                </p>
+                <p className="muted">
+                  <strong>How to mitigate:</strong> {selectedReasonDetail.mitigation}
+                </p>
               </div>
             ) : (
               <p className="muted">Select a reason to see details.</p>
