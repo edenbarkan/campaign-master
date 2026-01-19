@@ -1,0 +1,13 @@
+image:
+  repository: campaign-master-nginx
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  port: 80
+
+ingress:
+  enabled: true
+  className: nginx
+  host: campaign-master.local
+  path: /

@@ -1,0 +1,22 @@
+image:
+  repository: docker.io/library/campaign-master-backend
+  tag: latest
+  pullPolicy: Never
+
+service:
+  port: 5000
+
+env:
+  DATABASE_URL: postgresql://postgres:postgres@postgres:5432/campaign_master
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+probes:
+  enabled: true
+  path: /api/health
