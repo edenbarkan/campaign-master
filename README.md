@@ -4,8 +4,64 @@ Production-like AdTech MVP scaffold with Flask, React, Postgres, and Nginx.
 
 ## Quick start
 
+Local (Docker Compose):
+
 ```bash
 docker compose up -d --build
+```
+
+## Kubernetes (Minikube + Helm)
+
+This repo also supports a production-like local Kubernetes setup using Helm charts for `postgres`, `backend`, and `nginx`, with ingress routing via `ingress-nginx`.
+
+### Prerequisites
+
+- `minikube`, `kubectl`, `helm`
+- Ingress controller enabled:
+
+```bash
+minikube addons enable ingress
+```
+
+### Deploy (namespace: campaign-master)
+
+```bash
+kubectl create namespace campaign-master
+
+helm upgrade --install postgres ./helm/postgres -n campaign-master
+helm upgrade --install backend  ./helm/backend  -n campaign-master -f helm/backend/values-dev.yaml
+helm upgrade --install nginx    ./helm/nginx    -n campaign-master -f helm/nginx/values-dev.yaml
+
+kubectl get pods -n campaign-master
+kubectl get ingress -n campaign-master
+```
+
+### Access the app (macOS + Docker driver)
+
+On macOS with the minikube Docker driver, use port-forwarded URLs exposed by the ingress controller:
+
+```bash
+minikube service -n ingress-nginx ingress-nginx-controller --url
+```
+
+The command prints two URLs (HTTP and HTTPS). Use the HTTP one (the lower port mapped from 80).
+
+Add a hosts entry so the ingress host matches:
+
+```bash
+sudo sh -c 'grep -v "campaign-master.local" /etc/hosts > /tmp/hosts && echo "127.0.0.1 campaign-master.local" >> /tmp/hosts && mv /tmp/hosts /etc/hosts'
+```
+
+Then open:
+
+- `http://campaign-master.local:<HTTP_PORT>/login`
+
+### Verify health from inside the cluster
+
+```bash
+kubectl run curltest -n campaign-master --image=curlimages/curl -- sleep 3600
+kubectl exec -it -n campaign-master curltest -- curl -i http://backend:5000/api/health
+kubectl delete pod -n campaign-master curltest
 ```
 
 ## Demo Quickstart
@@ -52,6 +108,7 @@ Health check:
 ```bash
 curl -i http://localhost:8081/api/health
 ```
+For Kubernetes, see "Verify health from inside the cluster" above.
 
 Seed demo data:
 
@@ -163,6 +220,13 @@ bash scripts/verify_reject_penalty.sh
 Notes:
 - The script runs `make demo` with `MATCHING_DEBUG=1` and `FREQ_CAP_SECONDS=0` unless `VERIFY_SKIP_DEMO=1` is set.
 - It creates a temporary buyer + partner, requests an ad, forces a duplicate-click rejection, and asserts the penalty update.
+
+## Hardening (Kubernetes)
+
+- Backend includes an initContainer that waits for Postgres readiness before starting.
+- Backend has readiness/liveness probes (`/api/health`).
+- Separate dev/prod Helm values files are provided (`values-dev.yaml`, `values-prod.yaml`) to control image pull policy and future image tags.
+- Postgres runs as a StatefulSet with a PVC (persistent data volume).
 
 ## Reset
 
