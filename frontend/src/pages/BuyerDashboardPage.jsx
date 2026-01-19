@@ -80,6 +80,10 @@ const BuyerDashboardPage = () => {
   const spendValue = Number(totals.spend || 0);
   const effectiveCpcValue = Number(totals.effective_cpc || 0);
   const costEfficiencyValue = Number(totals.cost_efficiency || 0);
+  const formatPercentValue = (value) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? (parsed * 100).toFixed(2) : "0.00";
+  };
   const updatedSeconds = lastUpdatedAt
     ? Math.max(0, Math.floor((tick - lastUpdatedAt) / 1000))
     : null;
@@ -93,12 +97,12 @@ const BuyerDashboardPage = () => {
     (acc, campaign) => acc + Number(campaign.budget_remaining || 0),
     0
   );
-  const maxCpcValue = (campaigns || []).reduce((acc, campaign) => {
+  const activeCampaigns = (campaigns || []).filter((campaign) => campaign.status === "active");
+  const activeMaxCpc = activeCampaigns.reduce((acc, campaign) => {
     const value = Number(campaign.max_cpc ?? campaign.buyer_cpc ?? 0);
     return value > acc ? value : acc;
   }, 0);
-  const maxCpcDisplay =
-    maxCpcValue > 0 ? `$${maxCpcValue.toFixed(2)}` : "— (per campaign)";
+  const maxCpcDisplay = activeMaxCpc > 0 ? `$${activeMaxCpc.toFixed(2)}` : "—";
 
   return (
     <main className="page dashboard">
@@ -170,35 +174,88 @@ const BuyerDashboardPage = () => {
         ) : null}
         <div className="metrics">
           <div className="metric-card">
-            <p>Spend</p>
+            <p className="metric-label">
+              Spend
+              <span className="tooltip" tabIndex="0" data-tooltip={UI_STRINGS.common.totalSpendTooltip}>
+                i
+              </span>
+            </p>
             <h3>${spendValue.toFixed(2)}</h3>
           </div>
           <div className="metric-card">
-            <p>Effective CPC</p>
+            <p className="metric-label">
+              Effective CPC
+              <span className="tooltip" tabIndex="0" data-tooltip={UI_STRINGS.common.effectiveCpcTooltip}>
+                i
+              </span>
+            </p>
             <h3>${effectiveCpcValue.toFixed(2)}</h3>
           </div>
           {deliveryStatus ? (
             <div className="metric-card">
-              <p title={UI_STRINGS.common.fillRateTooltip}>Fill rate</p>
+              <p className="metric-label">
+                Fill rate
+                <span className="tooltip" tabIndex="0" data-tooltip={UI_STRINGS.common.fillRateTooltip}>
+                  i
+                </span>
+              </p>
               <h3>{(deliveryStatus.fill_rate * 100).toFixed(1)}%</h3>
             </div>
           ) : null}
           {isAdvanced ? (
             <>
               <div className="metric-card">
-                <p>Clicks</p>
+                <p className="metric-label">
+                  Clicks
+                  <span className="tooltip" tabIndex="0" data-tooltip={UI_STRINGS.common.totalClicksTooltip}>
+                    i
+                  </span>
+                </p>
                 <h3>{totals.clicks}</h3>
               </div>
               <div className="metric-card">
-                <p>Budget left</p>
+                <p className="metric-label">
+                  Budget left
+                  <span
+                    className="tooltip"
+                    tabIndex="0"
+                    data-tooltip={UI_STRINGS.common.budgetLeftTooltip}
+                  >
+                    i
+                  </span>
+                </p>
                 <h3>${totalBudgetLeft.toFixed(2)}</h3>
               </div>
               <div className="metric-card">
-                <p>Max CPC</p>
+                <p className="metric-label">
+                  Max CPC
+                  <span
+                    className="tooltip"
+                    tabIndex="0"
+                    data-tooltip={UI_STRINGS.common.maxCpcTooltip}
+                  >
+                    i
+                  </span>
+                </p>
                 <h3>{maxCpcDisplay}</h3>
+                <p className="muted">
+                  {activeMaxCpc > 0 ? "Active campaign" : "Set Max CPC per campaign."}
+                </p>
+                <a className="link" href="/buyer/campaigns">
+                  View campaigns
+                </a>
               </div>
               <div className="metric-card">
-                <p title={UI_STRINGS.common.costEfficiencyTooltip}>Cost efficiency</p>
+                <p className="metric-label">
+                  Cost efficiency
+                  <span
+                    className="tooltip"
+                    tabIndex="0"
+                    data-tooltip={UI_STRINGS.common.costEfficiencyTooltip}
+                  >
+                    i
+                  </span>
+                </p>
                 <h3>{costEfficiencyValue.toFixed(2)} clicks/$</h3>
               </div>
             </>
@@ -262,10 +319,23 @@ const BuyerDashboardPage = () => {
                 <div>
                   <p className="row-title">{campaign.name}</p>
                   <p className="muted">
-                    {campaign.status} · {campaign.clicks} clicks{" "}
-                    {isAdvanced
-                      ? `· ${(campaign.ctr * 100).toFixed(2)}% CTR`
-                      : ""}
+                    {campaign.status} · {campaign.clicks} clicks
+                    {isAdvanced ? (
+                      <>
+                        {" · "}
+                        {formatPercentValue(campaign.ctr)}%{" "}
+                        <span className="metric-label">
+                          CTR
+                          <span
+                            className="tooltip"
+                            tabIndex="0"
+                            data-tooltip={UI_STRINGS.common.ctrTooltip}
+                          >
+                            i
+                          </span>
+                        </span>
+                      </>
+                    ) : null}
                   </p>
                 </div>
                 <div className="row-metrics">

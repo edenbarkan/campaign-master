@@ -195,9 +195,20 @@ const BuyerHome = () => {
             <span>{toast.message}</span>
             <div className="actions">
               {toast.campaignId ? (
-                <Link className="button ghost small" to={`/buyer/campaigns/${toast.campaignId}`}>
-                  View campaign
-                </Link>
+                <>
+                  <Link
+                    className="button ghost small"
+                    to={`/buyer/campaigns/${toast.campaignId}`}
+                  >
+                    View campaign
+                  </Link>
+                  <Link
+                    className="button ghost small"
+                    to={`/buyer/campaigns/${toast.campaignId}#ad-form`}
+                  >
+                    Add first ad
+                  </Link>
+                </>
               ) : null}
               <button className="button ghost small" type="button" onClick={() => setToast(null)}>
                 Dismiss
@@ -270,12 +281,19 @@ const BuyerHome = () => {
                     placeholder="2.50"
                     required
                   />
+                  <span className="helper-text">
+                    Max CPC is the most you will pay per accepted click. You will never
+                    be charged more.
+                  </span>
                 </label>
               </div>
               <div className="field-row">
                 <label className="field">
                   <span>Platform fee</span>
                   <input value={`${platformFeePercent}%`} readOnly />
+                  <span className="helper-text">
+                    Platform fee is used to estimate partner payout.
+                  </span>
                 </label>
                 <label className="field">
                   <span title={UI_STRINGS.common.partnerPayoutTooltip}>
@@ -287,6 +305,9 @@ const BuyerHome = () => {
                     }
                     readOnly
                   />
+                  <span className="helper-text">
+                    Partner payout is an estimate per accepted click.
+                  </span>
                 </label>
               </div>
               <div className="field-row">
@@ -345,22 +366,26 @@ const BuyerHome = () => {
                   </div>
                   <div className="field-row">
                     <label className="field">
-                      <span>Start date</span>
+                      <span>Start date (coming soon)</span>
                       <input
                         name="start_date"
                         type="date"
                         value={form.start_date}
                         onChange={handleChange}
+                        disabled
                       />
+                      <span className="helper-text">Optional. Scheduling is coming soon.</span>
                     </label>
                     <label className="field">
-                      <span>End date</span>
+                      <span>End date (coming soon)</span>
                       <input
                         name="end_date"
                         type="date"
                         value={form.end_date}
                         onChange={handleChange}
+                        disabled
                       />
+                      <span className="helper-text">Optional. Scheduling is coming soon.</span>
                     </label>
                   </div>
                 </>

@@ -38,7 +38,14 @@ const LoginPage = () => {
         <header>
           <p className="eyebrow">Campaign Master</p>
           <h1>Welcome back</h1>
-          <p className="subhead">Sign in to manage campaigns or placements.</p>
+          <p className="subhead">
+            Campaign Master is an ads marketplace connecting Buyers and Partners.
+          </p>
+          <div className="trust-bullets">
+            <span>Accepted-only billing (no hidden fees)</span>
+            <span>Scoring affects ranking only</span>
+            <span>Transparent partner payouts</span>
+          </div>
         </header>
         <form onSubmit={handleSubmit} className="form">
           <label className="field">

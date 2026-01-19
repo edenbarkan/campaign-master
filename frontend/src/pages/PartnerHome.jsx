@@ -116,18 +116,11 @@ const PartnerHome = () => {
     const parsed = Number(value);
     return Number.isFinite(parsed) ? `${(parsed * 100).toFixed(2)}%` : "0.00%";
   };
-  const tldrBullets = breakdown
-    ? [
-        `Profit potential: $${formatNumber(breakdown.profit)} per click.`,
-        `CTR estimate: ${formatPercent(breakdown.ctr)}.`,
-        breakdown.targeting_bonus > 0 ? "Targeting match boosts rank." : null,
-        breakdown.partner_quality_state
-          ? `Partner quality: ${breakdown.partner_quality_state}.`
-          : null,
-        breakdown.delivery_boost > 0 ? "Delivery boost applied to improve pacing." : null,
-        breakdown.exploration_applied ? "Exploration bonus applied for new inventory." : null
-      ].filter(Boolean)
-    : [];
+  const tldrBullets = [
+    "Matches your targeting hints (if provided).",
+    "Quality affects ranking — never billing.",
+    "Market Stability Guard reduces abuse, not earnings."
+  ];
   const getDomain = (url) => {
     if (!url) return "";
     try {
@@ -203,7 +196,7 @@ const PartnerHome = () => {
     ? "Preview blocked by your browser"
     : "Preview unavailable";
   const fallbackNote = previewBlocked
-    ? "This does NOT affect delivery or tracking. Use the fields below to place the ad."
+    ? "This does NOT affect delivery or tracking. Try incognito or allow images for localhost."
     : "Delivery and tracking are unaffected. Check the image URL if available.";
 
   return (
@@ -316,6 +309,9 @@ const PartnerHome = () => {
                 {loading ? "Requesting..." : "Request ad"}
               </button>
               {error ? <p className="error">{error}</p> : null}
+              <p className="muted earnings-note">
+                You earn only from accepted clicks. Rejected clicks never pay.
+              </p>
             </div>
           </section>
           <section className="card">
@@ -387,94 +383,92 @@ const PartnerHome = () => {
                       ))}
                     </ul>
                   ) : null}
-                  <p className="muted">{UI_STRINGS.common.scoringDisclaimer}</p>
-                  {isAdvanced ? (
-                    <>
-                      <p className="muted">{assignment.explanation}</p>
-                      {qualityBadge ? (
-                        <div className="quality-alert">
-                          <span
-                            className={`badge ${qualityBadge.tone}`}
-                            title={qualityBadge.tooltip}
-                          >
-                            {qualityBadge.label}
-                          </span>
-                          <span className="muted">Partner quality state</span>
-                        </div>
-                      ) : null}
-                      {breakdown?.market_note ? (
-                        <p className="muted">Market note: {breakdown.market_note}</p>
-                      ) : null}
-                      {breakdown ? (
-                        <div className="table compact">
-                          {breakdownRows.map(([label, value, tooltip]) => (
-                            <div className="table-row compact" key={label}>
-                              <span className="muted" title={tooltip}>
-                                {label}
-                              </span>
-                              <span>{value}</span>
-                            </div>
-                          ))}
-                        </div>
-                      ) : null}
-                      <details className="score-legend">
-                        <summary>What do these numbers mean?</summary>
-                        <ul className="legend-list">
-                          <li>
-                            <strong>Profit</strong> — Expected profit for this impression.
-                          </li>
-                          <li>
-                            <strong>Profit multiplier</strong> — Adaptive scaling based on
-                            market health.
-                          </li>
-                          <li>
-                            <strong>Smoothed CTR</strong> — Recent click-through rate estimate.
-                          </li>
-                          <li>
-                            <strong>CTR weight</strong> — How strongly CTR influences final score.
-                          </li>
-                          <li>
-                            <strong>CTR multiplier</strong> — Adaptive scaling applied to CTR.
-                          </li>
-                          <li>
-                            <strong>Targeting bonus</strong> — Extra score for matching partner
-                            targeting.
-                          </li>
-                          <li>
-                            <strong>Targeting multiplier</strong> — Adaptive scaling applied to
-                            targeting match.
-                          </li>
-                          <li>
-                            <strong>Partner reject rate</strong> — Partner’s recent rejected-click
-                            ratio.
-                          </li>
-                          <li>
-                            <strong>Partner reject penalty</strong> — Base penalty from reject
-                            rate and its weight.
-                          </li>
-                          <li>
-                            <strong>Quality multiplier</strong> — Scales penalties based on
-                            partner state and market conditions.
-                          </li>
-                          <li>
-                            <strong>Partner quality penalty</strong> — Final penalty applied after
-                            multipliers.
-                          </li>
-                          <li>
-                            <strong>Delivery boost</strong> — Temporary boost for under-delivering
-                            campaigns.
-                          </li>
-                          <li>
-                            <strong>Exploration bonus</strong> — Bonus for new ads or partners
-                            during exploration.
-                          </li>
-                          <li>
-                            <strong>Total score</strong> — Final ranking score used by the matcher.
-                          </li>
-                        </ul>
-                      </details>
-                    </>
-                  ) : null}
+                  <details className="score-details">
+                    <summary>Show details</summary>
+                    <p className="muted">{assignment.explanation || "No explanation yet."}</p>
+                    {qualityBadge ? (
+                      <div className="quality-alert">
+                        <span
+                          className={`badge ${qualityBadge.tone}`}
+                          title={qualityBadge.tooltip}
+                        >
+                          {qualityBadge.label}
+                        </span>
+                        <span className="muted">Partner quality state</span>
+                      </div>
+                    ) : null}
+                    {breakdown?.market_note ? (
+                      <p className="muted">Market note: {breakdown.market_note}</p>
+                    ) : null}
+                    {breakdown ? (
+                      <div className="table compact">
+                        {breakdownRows.map(([label, value, tooltip]) => (
+                          <div className="table-row compact" key={label}>
+                            <span className="muted" title={tooltip}>
+                              {label}
+                            </span>
+                            <span>{value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+                    <details className="score-legend">
+                      <summary>What do these numbers mean?</summary>
+                      <ul className="legend-list">
+                        <li>
+                          <strong>Profit</strong> — Expected profit for this impression.
+                        </li>
+                        <li>
+                          <strong>Profit multiplier</strong> — Adaptive scaling based on market
+                          health.
+                        </li>
+                        <li>
+                          <strong>Smoothed CTR</strong> — Recent click-through rate estimate.
+                        </li>
+                        <li>
+                          <strong>CTR weight</strong> — How strongly CTR influences final score.
+                        </li>
+                        <li>
+                          <strong>CTR multiplier</strong> — Adaptive scaling applied to CTR.
+                        </li>
+                        <li>
+                          <strong>Targeting bonus</strong> — Extra score for matching partner
+                          targeting.
+                        </li>
+                        <li>
+                          <strong>Targeting multiplier</strong> — Adaptive scaling applied to
+                          targeting match.
+                        </li>
+                        <li>
+                          <strong>Partner reject rate</strong> — Partner’s recent rejected-click
+                          ratio.
+                        </li>
+                        <li>
+                          <strong>Partner reject penalty</strong> — Base penalty from reject rate
+                          and its weight.
+                        </li>
+                        <li>
+                          <strong>Quality multiplier</strong> — Scales penalties based on partner
+                          state and market conditions.
+                        </li>
+                        <li>
+                          <strong>Partner quality penalty</strong> — Final penalty applied after
+                          multipliers.
+                        </li>
+                        <li>
+                          <strong>Delivery boost</strong> — Temporary boost for under-delivering
+                          campaigns.
+                        </li>
+                        <li>
+                          <strong>Exploration bonus</strong> — Bonus for new ads or partners
+                          during exploration.
+                        </li>
+                        <li>
+                          <strong>Total score</strong> — Final ranking score used by the matcher.
+                        </li>
+                      </ul>
+                    </details>
+                  </details>
                 </div>
               </div>
             )}

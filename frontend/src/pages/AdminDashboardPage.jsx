@@ -202,19 +202,39 @@ const AdminDashboardPage = () => {
         ) : null}
         <div className="metrics">
           <div className="metric-card">
-            <p>Total spend</p>
+            <p className="metric-label">
+              Total spend
+              <span className="tooltip" tabIndex="0" data-tooltip={UI_STRINGS.common.totalSpendTooltip}>
+                i
+              </span>
+            </p>
             <h3>${totals.spend.toFixed(2)}</h3>
           </div>
           <div className="metric-card">
-            <p>Total earnings</p>
+            <p className="metric-label">
+              Total earnings
+              <span className="tooltip" tabIndex="0" data-tooltip={UI_STRINGS.common.totalEarningsTooltip}>
+                i
+              </span>
+            </p>
             <h3>${totals.earnings.toFixed(2)}</h3>
           </div>
           <div className="metric-card">
-            <p>Total profit</p>
+            <p className="metric-label">
+              Total profit
+              <span className="tooltip" tabIndex="0" data-tooltip={UI_STRINGS.common.totalProfitTooltip}>
+                i
+              </span>
+            </p>
             <h3>${totals.profit.toFixed(2)}</h3>
           </div>
           <div className="metric-card">
-            <p>Total clicks</p>
+            <p className="metric-label">
+              Total clicks
+              <span className="tooltip" tabIndex="0" data-tooltip={UI_STRINGS.common.totalClicksTooltip}>
+                i
+              </span>
+            </p>
             <h3>{totals.clicks}</h3>
           </div>
         </div>
@@ -253,19 +273,39 @@ const AdminDashboardPage = () => {
               <h2>Marketplace health</h2>
               <div className="metrics compact">
                 <div className="metric-card">
-                  <p title={UI_STRINGS.common.fillRateTooltip}>Fill rate</p>
+                  <p className="metric-label">
+                    Fill rate
+                    <span className="tooltip" tabIndex="0" data-tooltip={UI_STRINGS.common.fillRateTooltip}>
+                      i
+                    </span>
+                  </p>
                   <h3>{marketplaceFillRate.toFixed(1)}%</h3>
                 </div>
                 <div className="metric-card">
-                  <p>Reject rate</p>
+                  <p className="metric-label">
+                    Reject rate
+                    <span className="tooltip" tabIndex="0" data-tooltip={UI_STRINGS.common.rejectionRateTooltip}>
+                      i
+                    </span>
+                  </p>
                   <h3>{marketplaceRejectRate.toFixed(1)}%</h3>
                 </div>
                 <div className="metric-card">
-                  <p>Take rate</p>
+                  <p className="metric-label">
+                    Take rate
+                    <span className="tooltip" tabIndex="0" data-tooltip={UI_STRINGS.common.takeRateTooltip}>
+                      i
+                    </span>
+                  </p>
                   <h3>{marketplaceTakeRate.toFixed(1)}%</h3>
                 </div>
                 <div className="metric-card">
-                  <p>Profit</p>
+                  <p className="metric-label">
+                    Profit
+                    <span className="tooltip" tabIndex="0" data-tooltip={UI_STRINGS.common.totalProfitTooltip}>
+                      i
+                    </span>
+                  </p>
                   <h3>${marketplaceHealth.profit.toFixed(2)}</h3>
                 </div>
               </div>
@@ -348,15 +388,30 @@ const AdminDashboardPage = () => {
             <h2>Risk overview</h2>
             <div className="metrics compact">
               <div className="metric-card">
-                <p>Rejected clicks</p>
+                <p className="metric-label">
+                  Rejected clicks
+                  <span className="tooltip" tabIndex="0" data-tooltip={UI_STRINGS.common.rejectedClicksTooltip}>
+                    i
+                  </span>
+                </p>
                 <h3>{riskTotals.rejected || 0}</h3>
               </div>
               <div className="metric-card">
-                <p>Rejection rate</p>
+                <p className="metric-label">
+                  Rejection rate
+                  <span className="tooltip" tabIndex="0" data-tooltip={UI_STRINGS.common.rejectionRateTooltip}>
+                    i
+                  </span>
+                </p>
                 <h3>{rejectionRate.toFixed(1)}%</h3>
               </div>
               <div className="metric-card">
-                <p>Top reason</p>
+                <p className="metric-label">
+                  Top reason
+                  <span className="tooltip" tabIndex="0" data-tooltip={UI_STRINGS.common.topReasonTooltip}>
+                    i
+                  </span>
+                </p>
                 <h3>{topReason ? topReason.reason : "N/A"}</h3>
               </div>
             </div>

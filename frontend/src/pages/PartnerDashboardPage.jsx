@@ -111,20 +111,11 @@ const PartnerDashboardPage = () => {
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed.toFixed(2) : "0.00";
   };
-  const tldrBullets = latestBreakdown
-    ? [
-        `Profit potential: $${formatNumber(latestBreakdown.profit)} per click.`,
-        `CTR estimate: ${formatPercent(latestBreakdown.ctr)}.`,
-        latestBreakdown.targeting_bonus > 0 ? "Targeting match boosts rank." : null,
-        latestBreakdown.partner_quality_state
-          ? `Partner quality: ${latestBreakdown.partner_quality_state}.`
-          : null,
-        latestBreakdown.delivery_boost > 0
-          ? "Delivery boost applied to improve pacing."
-          : null,
-        latestBreakdown.exploration_applied ? "Exploration bonus applied for new inventory." : null
-      ].filter(Boolean)
-    : [];
+  const tldrBullets = [
+    "Matches your targeting hints (if provided).",
+    "Quality affects ranking — never billing.",
+    "Market Stability Guard reduces abuse, not earnings."
+  ];
   const qualityAlerts = {
     NEW: {
       label: "~ NEW",
@@ -254,15 +245,34 @@ const PartnerDashboardPage = () => {
         ) : null}
         <div className="metrics">
           <div className="metric-card">
-            <p>Earnings</p>
+            <p className="metric-label">
+              Earnings
+              <span className="tooltip" tabIndex="0" data-tooltip={UI_STRINGS.common.earningsTooltip}>
+                i
+              </span>
+            </p>
             <h3>${totals.earnings.toFixed(2)}</h3>
           </div>
           <div className="metric-card">
-            <p title={UI_STRINGS.common.ctrTooltip}>CTR</p>
+            <p className="metric-label">
+              CTR
+              <span className="tooltip" tabIndex="0" data-tooltip={UI_STRINGS.common.ctrTooltip}>
+                i
+              </span>
+            </p>
             <h3>{ctr.toFixed(2)}%</h3>
           </div>
           <div className="metric-card">
-            <p>Quality state</p>
+            <p className="metric-label">
+              Quality state
+              <span
+                className="tooltip"
+                tabIndex="0"
+                data-tooltip={UI_STRINGS.common.qualityStateTooltip}
+              >
+                i
+              </span>
+            </p>
             {qualityAlert ? (
               <span className={`badge ${qualityAlert.tone}`} title={qualityAlert.tooltip}>
                 {qualityAlert.label}
@@ -272,41 +282,108 @@ const PartnerDashboardPage = () => {
             )}
           </div>
           <div className="metric-card">
-            <p title={UI_STRINGS.common.fillRateTooltip}>Fill rate</p>
+            <p className="metric-label">
+              Fill rate
+              <span className="tooltip" tabIndex="0" data-tooltip={UI_STRINGS.common.fillRateTooltip}>
+                i
+              </span>
+            </p>
             <h3>{(fillRate * 100).toFixed(1)}%</h3>
           </div>
           {isAdvanced ? (
             <>
               <div className="metric-card">
-                <p>Clicks</p>
+                <p className="metric-label">
+                  Clicks
+                  <span className="tooltip" tabIndex="0" data-tooltip={UI_STRINGS.common.totalClicksTooltip}>
+                    i
+                  </span>
+                </p>
                 <h3>{totals.clicks}</h3>
               </div>
               <div className="metric-card">
-                <p title={UI_STRINGS.common.epcTooltip}>EPC</p>
+                <p className="metric-label">
+                  EPC
+                  <span className="tooltip" tabIndex="0" data-tooltip={UI_STRINGS.common.epcTooltip}>
+                    i
+                  </span>
+                </p>
                 <h3>${totals.epc.toFixed(2)}</h3>
               </div>
               <div className="metric-card">
-                <p>Impressions</p>
+                <p className="metric-label">
+                  Impressions
+                  <span
+                    className="tooltip"
+                    tabIndex="0"
+                    data-tooltip={UI_STRINGS.common.impressionsTooltip}
+                  >
+                    i
+                  </span>
+                </p>
                 <h3>{totals.impressions}</h3>
               </div>
               <div className="metric-card">
-                <p title={UI_STRINGS.common.rejectSignalTooltip}>Rejection rate</p>
+                <p className="metric-label">
+                  Rejection rate
+                  <span
+                    className="tooltip"
+                    tabIndex="0"
+                    data-tooltip={UI_STRINGS.common.rejectionRateTooltip}
+                  >
+                    i
+                  </span>
+                </p>
                 <h3>{rejectionRate.toFixed(2)}%</h3>
               </div>
               <div className="metric-card">
-                <p>Total requests</p>
+                <p className="metric-label">
+                  Total requests
+                  <span
+                    className="tooltip"
+                    tabIndex="0"
+                    data-tooltip={UI_STRINGS.common.totalRequestsTooltip}
+                  >
+                    i
+                  </span>
+                </p>
                 <h3>{totalRequests}</h3>
               </div>
               <div className="metric-card">
-                <p>Filled requests</p>
+                <p className="metric-label">
+                  Filled requests
+                  <span
+                    className="tooltip"
+                    tabIndex="0"
+                    data-tooltip={UI_STRINGS.common.filledRequestsTooltip}
+                  >
+                    i
+                  </span>
+                </p>
                 <h3>{filledRequests}</h3>
               </div>
               <div className="metric-card">
-                <p>Unfilled requests</p>
+                <p className="metric-label">
+                  Unfilled requests
+                  <span
+                    className="tooltip"
+                    tabIndex="0"
+                    data-tooltip={UI_STRINGS.common.unfilledRequestsTooltip}
+                  >
+                    i
+                  </span>
+                </p>
                 <h3>{unfilledRequests}</h3>
               </div>
             </>
           ) : null}
+        </div>
+        <div className="earnings-note">
+          <p className="row-title">How you earn</p>
+          <p className="muted">
+            You earn only from accepted clicks. Rejected clicks never pay. Better traffic
+            quality means better ads and higher earnings.
+          </p>
         </div>
         {partnerQualityNote ? <p className="muted">{partnerQualityNote}</p> : null}
         {qualityAlert ? (
@@ -412,92 +489,89 @@ const PartnerDashboardPage = () => {
                 ))}
               </ul>
             ) : null}
-            <p className="muted">{UI_STRINGS.common.scoringDisclaimer}</p>
-            {isAdvanced ? (
-              <>
-                <p className="muted">{latestRequest.explanation || "No explanation yet."}</p>
-                {breakdownQualityAlert ? (
-                  <div className="quality-alert">
-                    <span
-                      className={`badge ${breakdownQualityAlert.tone}`}
-                      title={breakdownQualityAlert.tooltip}
-                    >
-                      {breakdownQualityAlert.label}
-                    </span>
-                    <span className="muted">Partner quality state</span>
-                  </div>
-                ) : null}
-                {latestBreakdown?.market_note ? (
-                  <p className="muted">Market note: {latestBreakdown.market_note}</p>
-                ) : null}
-                {latestBreakdown ? (
-                  <div className="table compact">
-                    {breakdownRows.map(([label, value, tooltip]) => (
-                      <div className="table-row compact" key={label}>
-                        <span className="muted" title={tooltip}>
-                          {label}
-                        </span>
-                        <span>{value}</span>
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-                <details className="score-legend">
-                  <summary>What do these numbers mean?</summary>
-                  <ul className="legend-list">
-                    <li>
-                      <strong>Profit</strong> — Expected profit for this impression.
-                    </li>
-                    <li>
-                      <strong>Profit multiplier</strong> — Adaptive scaling based on market
-                      health.
-                    </li>
-                    <li>
-                      <strong>Smoothed CTR</strong> — Recent click-through rate estimate.
-                    </li>
-                    <li>
-                      <strong>CTR weight</strong> — How strongly CTR influences final score.
-                    </li>
-                    <li>
-                      <strong>CTR multiplier</strong> — Adaptive scaling applied to CTR.
-                    </li>
-                    <li>
-                      <strong>Targeting bonus</strong> — Extra score for matching partner targeting.
-                    </li>
-                    <li>
-                      <strong>Targeting multiplier</strong> — Adaptive scaling applied to targeting
-                      match.
-                    </li>
-                    <li>
-                      <strong>Partner reject rate</strong> — Partner’s recent rejected-click ratio.
-                    </li>
-                    <li>
-                      <strong>Partner reject penalty</strong> — Base penalty from reject rate and
-                      its weight.
-                    </li>
-                    <li>
-                      <strong>Quality multiplier</strong> — Scales penalties based on partner state
-                      and market conditions.
-                    </li>
-                    <li>
-                      <strong>Partner quality penalty</strong> — Final penalty applied after
-                      multipliers.
-                    </li>
-                    <li>
-                      <strong>Delivery boost</strong> — Temporary boost for under-delivering
-                      campaigns.
-                    </li>
-                    <li>
-                      <strong>Exploration bonus</strong> — Bonus for new ads or partners during
-                      exploration.
-                    </li>
-                    <li>
-                      <strong>Total score</strong> — Final ranking score used by the matcher.
-                    </li>
-                  </ul>
-                </details>
-              </>
-            ) : null}
+            <details className="score-details">
+              <summary>Show details</summary>
+              <p className="muted">{latestRequest.explanation || "No explanation yet."}</p>
+              {breakdownQualityAlert ? (
+                <div className="quality-alert">
+                  <span
+                    className={`badge ${breakdownQualityAlert.tone}`}
+                    title={breakdownQualityAlert.tooltip}
+                  >
+                    {breakdownQualityAlert.label}
+                  </span>
+                  <span className="muted">Partner quality state</span>
+                </div>
+              ) : null}
+              {latestBreakdown?.market_note ? (
+                <p className="muted">Market note: {latestBreakdown.market_note}</p>
+              ) : null}
+              {latestBreakdown ? (
+                <div className="table compact">
+                  {breakdownRows.map(([label, value, tooltip]) => (
+                    <div className="table-row compact" key={label}>
+                      <span className="muted" title={tooltip}>
+                        {label}
+                      </span>
+                      <span>{value}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+              <details className="score-legend">
+                <summary>What do these numbers mean?</summary>
+                <ul className="legend-list">
+                  <li>
+                    <strong>Profit</strong> — Expected profit for this impression.
+                  </li>
+                  <li>
+                    <strong>Profit multiplier</strong> — Adaptive scaling based on market health.
+                  </li>
+                  <li>
+                    <strong>Smoothed CTR</strong> — Recent click-through rate estimate.
+                  </li>
+                  <li>
+                    <strong>CTR weight</strong> — How strongly CTR influences final score.
+                  </li>
+                  <li>
+                    <strong>CTR multiplier</strong> — Adaptive scaling applied to CTR.
+                  </li>
+                  <li>
+                    <strong>Targeting bonus</strong> — Extra score for matching partner targeting.
+                  </li>
+                  <li>
+                    <strong>Targeting multiplier</strong> — Adaptive scaling applied to targeting
+                    match.
+                  </li>
+                  <li>
+                    <strong>Partner reject rate</strong> — Partner’s recent rejected-click ratio.
+                  </li>
+                  <li>
+                    <strong>Partner reject penalty</strong> — Base penalty from reject rate and its
+                    weight.
+                  </li>
+                  <li>
+                    <strong>Quality multiplier</strong> — Scales penalties based on partner state
+                    and market conditions.
+                  </li>
+                  <li>
+                    <strong>Partner quality penalty</strong> — Final penalty applied after
+                    multipliers.
+                  </li>
+                  <li>
+                    <strong>Delivery boost</strong> — Temporary boost for under-delivering
+                    campaigns.
+                  </li>
+                  <li>
+                    <strong>Exploration bonus</strong> — Bonus for new ads or partners during
+                    exploration.
+                  </li>
+                  <li>
+                    <strong>Total score</strong> — Final ranking score used by the matcher.
+                  </li>
+                </ul>
+              </details>
+            </details>
           </section>
         ) : null}
       </section>

@@ -157,9 +157,35 @@ select:focus-visible {
   cursor: not-allowed;
 }
 
+.trust-bullets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: #475569;
+}
+
+.trust-bullets span {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+}
+
 .muted {
   margin-top: 18px;
   color: #6b7280;
+}
+
+.link {
+  color: #0f766e;
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
 }
 
 .error {
@@ -353,6 +379,10 @@ select:focus-visible {
   align-items: center;
 }
 
+.earnings-note {
+  margin-top: 10px;
+}
+
 .card h2 {
   margin: 0 0 16px;
   font-size: 20px;
@@ -422,6 +452,12 @@ select:focus-visible {
 }
 
 .field-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.metric-label {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -637,6 +673,18 @@ select:focus-visible {
   color: #475569;
 }
 
+.score-details {
+  margin-top: 12px;
+  font-size: 14px;
+  color: #475569;
+}
+
+.score-details summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: #0f172a;
+}
+
 .score-legend summary {
   cursor: pointer;
   font-weight: 600;
@@ -721,4 +769,39 @@ select:focus-visible {
 .snippet textarea {
   font-family: "IBM Plex Mono", monospace;
   font-size: 12px;
+}
+
+@media (max-width: 1024px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .field-row {
+    grid-template-columns: 1fr;
+  }
+
+  .panel {
+    padding: 16px;
+  }
+
+  .form .actions {
+    position: sticky;
+    bottom: 8px;
+    background: #fdfcfb;
+    padding: 8px 0;
+    z-index: 5;
+  }
+
+  .table-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .row-metrics {
+    text-align: left;
+  }
+
+  .subnav {
+    flex-wrap: wrap;
+  }
 }
