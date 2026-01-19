@@ -16,3 +16,7 @@ build/
 
 # Helm / kube local
 *.tgz
+
+.env.*
+*.pem
+*.key
