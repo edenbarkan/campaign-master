@@ -8,6 +8,8 @@ on:
 jobs:
   build-test-smoke:
     runs-on: ubuntu-latest
+    env:
+      COMPOSE_PROJECT_NAME: campaign-master
     timeout-minutes: 25
 
     steps:
@@ -37,17 +39,25 @@ jobs:
 
       - name: Tag images (commit SHA) + write artifact file
         run: |
-          set -e
+          set -euo pipefail
           TAG="${GITHUB_SHA::7}"
 
-          BACKEND_IMG="$(docker compose images -q backend)"
-          FRONTEND_IMG="$(docker compose images -q frontend)"
+          # With COMPOSE_PROJECT_NAME set, compose-built images have deterministic names:
+          #   campaign-master-backend:latest
+          #   campaign-master-frontend:latest
+          BACKEND_REF="${COMPOSE_PROJECT_NAME}-backend:latest"
+          FRONTEND_REF="${COMPOSE_PROJECT_NAME}-frontend:latest"
 
-          echo "backend image id:  $BACKEND_IMG"
-          echo "frontend image id: $FRONTEND_IMG"
+          echo "backend ref:  ${BACKEND_REF}"
+          echo "frontend ref: ${FRONTEND_REF}"
 
-          docker tag "$BACKEND_IMG"  "campaign-master-backend:${TAG}"
-          docker tag "$FRONTEND_IMG" "campaign-master-frontend:${TAG}"
+          # Ensure images exist (fail with a clear message)
+          docker image inspect "${BACKEND_REF}" >/dev/null
+          docker image inspect "${FRONTEND_REF}" >/dev/null
+
+          # Tag them with stable names + commit tag
+          docker tag "${BACKEND_REF}"  "campaign-master-backend:${TAG}"
+          docker tag "${FRONTEND_REF}" "campaign-master-frontend:${TAG}"
 
           : > images.txt
           docker inspect "campaign-master-backend:${TAG}"  --format='{{index .RepoTags 0}} {{.Id}}' | tee -a images.txt
