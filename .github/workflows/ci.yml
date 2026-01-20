@@ -1,0 +1,149 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  build-test-smoke:
+    runs-on: ubuntu-latest
+    env:
+      COMPOSE_PROJECT_NAME: campaign-master
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.4
+
+      - name: Helm lint
+        run: |
+          helm lint ./helm/backend
+          helm lint ./helm/nginx
+          helm lint ./helm/postgres
+
+      - name: Helm template (render check)
+        run: |
+          helm template backend ./helm/backend >/dev/null
+          helm template nginx ./helm/nginx >/dev/null
+          helm template postgres ./helm/postgres >/dev/null
+
+      - name: Build images (backend + frontend)
+        run: |
+          docker compose build backend frontend
+
+      - name: Tag images (commit SHA) + write artifact file
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_SHA::7}"
+
+          # With COMPOSE_PROJECT_NAME set, compose-built images have deterministic names:
+          #   campaign-master-backend:latest
+          #   campaign-master-frontend:latest
+          BACKEND_REF="${COMPOSE_PROJECT_NAME}-backend:latest"
+          FRONTEND_REF="${COMPOSE_PROJECT_NAME}-frontend:latest"
+
+          echo "backend ref:  ${BACKEND_REF}"
+          echo "frontend ref: ${FRONTEND_REF}"
+
+          # Ensure images exist (fail with a clear message)
+          docker image inspect "${BACKEND_REF}" >/dev/null
+          docker image inspect "${FRONTEND_REF}" >/dev/null
+
+          # Tag them with stable names + commit tag
+          docker tag "${BACKEND_REF}"  "campaign-master-backend:${TAG}"
+          docker tag "${FRONTEND_REF}" "campaign-master-frontend:${TAG}"
+
+          : > images.txt
+          docker inspect "campaign-master-backend:${TAG}"  --format='{{index .RepoTags 0}} {{.Id}}' | tee -a images.txt
+          docker inspect "campaign-master-frontend:${TAG}" --format='{{index .RepoTags 0}} {{.Id}}' | tee -a images.txt
+
+          echo "Tagged images:"
+          cat images.txt
+
+      - name: Upload image tags artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: built-images
+          path: images.txt
+
+      - name: Configure AWS credentials
+        if: github.ref == 'refs/heads/main'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        if: github.ref == 'refs/heads/main'
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Push images to ECR (main only)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_SHA::7}"
+          AWS_ACCOUNT_ID="${{ secrets.AWS_ACCOUNT_ID }}"
+          AWS_REGION="${{ secrets.AWS_REGION }}"
+
+          ECR="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+
+          docker tag "campaign-master-backend:${TAG}"  "${ECR}/campaign-master-backend:${TAG}"
+          docker tag "campaign-master-frontend:${TAG}" "${ECR}/campaign-master-frontend:${TAG}"
+
+          docker push "${ECR}/campaign-master-backend:${TAG}"
+          docker push "${ECR}/campaign-master-frontend:${TAG}"
+
+      - name: Start stack (docker compose)
+        run: |
+          docker compose up -d
+          docker compose ps
+
+      - name: Wait for DB healthy
+        run: |
+          for i in {1..60}; do
+            if docker compose ps | grep -E "db" | grep -q "healthy"; then
+              echo "DB is healthy"
+              exit 0
+            fi
+            echo "Waiting for DB... ($i)"
+            sleep 2
+          done
+          echo "DB did not become healthy"
+          docker compose ps
+          docker compose logs --no-color --tail=200 db
+          exit 1
+
+      - name: Wait for app health (via nginx)
+        run: |
+          for i in {1..90}; do
+            if curl -fsS http://localhost:8081/api/health >/dev/null; then
+              echo "Health OK"
+              exit 0
+            fi
+            echo "Waiting for /api/health... ($i)"
+            sleep 2
+          done
+          echo "Health check failed"
+          docker compose ps
+          docker compose logs --no-color --tail=200
+          exit 1
+
+      - name: Smoke check login page
+        run: |
+          curl -fsS -I http://localhost:8081/login | head -n 20
+
+      - name: Run backend migrations + tests
+        run: |
+          docker compose exec -T backend sh -c "flask db upgrade && pytest -q"
+
+      - name: Teardown
+        if: always()
+        run: |
+          docker compose down -v
