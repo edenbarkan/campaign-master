@@ -35,6 +35,33 @@ jobs:
         run: |
           docker compose build backend frontend
 
+      - name: Tag images (commit SHA) + write artifact file
+        run: |
+          set -e
+          TAG="${GITHUB_SHA::7}"
+
+          BACKEND_IMG="$(docker compose images -q backend)"
+          FRONTEND_IMG="$(docker compose images -q frontend)"
+
+          echo "backend image id:  $BACKEND_IMG"
+          echo "frontend image id: $FRONTEND_IMG"
+
+          docker tag "$BACKEND_IMG"  "campaign-master-backend:${TAG}"
+          docker tag "$FRONTEND_IMG" "campaign-master-frontend:${TAG}"
+
+          : > images.txt
+          docker inspect "campaign-master-backend:${TAG}"  --format='{{index .RepoTags 0}} {{.Id}}' | tee -a images.txt
+          docker inspect "campaign-master-frontend:${TAG}" --format='{{index .RepoTags 0}} {{.Id}}' | tee -a images.txt
+
+          echo "Tagged images:"
+          cat images.txt
+
+      - name: Upload image tags artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: built-images
+          path: images.txt
+
       - name: Start stack (docker compose)
         run: |
           docker compose up -d
