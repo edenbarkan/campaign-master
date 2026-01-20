@@ -72,6 +72,34 @@ jobs:
           name: built-images
           path: images.txt
 
+      - name: Configure AWS credentials
+        if: github.ref == 'refs/heads/main'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        if: github.ref == 'refs/heads/main'
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Push images to ECR (main only)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_SHA::7}"
+          AWS_ACCOUNT_ID="${{ secrets.AWS_ACCOUNT_ID }}"
+          AWS_REGION="${{ secrets.AWS_REGION }}"
+
+          ECR="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+
+          docker tag "campaign-master-backend:${TAG}"  "${ECR}/campaign-master-backend:${TAG}"
+          docker tag "campaign-master-frontend:${TAG}" "${ECR}/campaign-master-frontend:${TAG}"
+
+          docker push "${ECR}/campaign-master-backend:${TAG}"
+          docker push "${ECR}/campaign-master-frontend:${TAG}"
+
       - name: Start stack (docker compose)
         run: |
           docker compose up -d
