@@ -1,7 +1,13 @@
 image:
-  repository: docker.io/library/campaign-master-backend
+  # ECR (us-east-1)
+  repository: 471448382412.dkr.ecr.us-east-1.amazonaws.com/campaign-master-backend
+  # CI can override this (e.g., commit SHA). Keep latest for now.
   tag: latest
-  pullPolicy: Never
+  pullPolicy: IfNotPresent
+
+# If you later decide to use a docker-registry secret for ECR, add it here.
+# (Most setups rely on the node IAM role instead, so this stays empty.)
+imagePullSecrets: []
 
 service:
   port: 5000
