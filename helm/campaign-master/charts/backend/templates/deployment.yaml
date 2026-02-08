@@ -13,19 +13,37 @@ spec:
         app: backend
     spec:
       initContainers:
-        - name: wait-for-postgres
+        - name: wait-for-rds
           image: postgres:15
           command:
             - sh
             - -c
             - |
-              until pg_isready -h postgres -p 5432 -U postgres; do
-                echo "waiting for postgres...";
+              until pg_isready -h $RDS_HOST -p $RDS_PORT -U $RDS_USERNAME; do
+                echo "waiting for RDS...";
                 sleep 2;
               done
           env:
+            - name: RDS_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: campaign-master-db-credentials
+                  key: RDS_HOST
+            - name: RDS_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: campaign-master-db-credentials
+                  key: RDS_PORT
+            - name: RDS_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: campaign-master-db-credentials
+                  key: RDS_USERNAME
             - name: PGPASSWORD
-              value: "postgres"    
+              valueFrom:
+                secretKeyRef:
+                  name: campaign-master-db-credentials
+                  key: RDS_PASSWORD    
       containers:
         - name: backend
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -33,7 +51,10 @@ spec:
             - containerPort: {{ .Values.service.port }}
           env:
             - name: DATABASE_URL
-              value: "{{ .Values.env.DATABASE_URL }}"
+              valueFrom:
+                secretKeyRef:
+                  name: campaign-master-db-credentials
+                  key: DATABASE_URL
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}

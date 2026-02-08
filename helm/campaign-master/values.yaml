@@ -5,7 +5,7 @@ global:
 
 # Postgres subchart values
 postgres:
-  enabled: true
+  enabled: false  # Using RDS instead
   image:
     repository: postgres
     tag: "15"
@@ -38,7 +38,9 @@ backend:
   service:
     port: 5000
   env:
-    DATABASE_URL: postgresql://postgres:postgres@postgres:5432/campaign_master
+    # RDS endpoint - password should be injected from AWS Secrets Manager
+    # Format: postgresql://username:password@host:port/database
+    DATABASE_URL: postgresql://postgres:REPLACE_WITH_SECRET@campaign-master-staging-db.cab06swg2l8v.us-east-1.rds.amazonaws.com:5432/campaign_master
   resources:
     requests:
       cpu: 100m
