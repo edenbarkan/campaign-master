@@ -1,0 +1,28 @@
+image:
+  # ECR (us-east-1)
+  repository: 471448382412.dkr.ecr.us-east-1.amazonaws.com/campaign-master-backend
+  # CI can override this (e.g., commit SHA). Keep latest for now.
+  tag: latest
+  pullPolicy: IfNotPresent
+
+# If you later decide to use a docker-registry secret for ECR, add it here.
+# (Most setups rely on the node IAM role instead, so this stays empty.)
+imagePullSecrets: []
+
+service:
+  port: 5000
+
+env:
+  DATABASE_URL: postgresql://postgres:postgres@postgres:5432/campaign_master
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+probes:
+  enabled: true
+  path: /api/health

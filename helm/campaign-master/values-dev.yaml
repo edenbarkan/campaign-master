@@ -1,0 +1,27 @@
+global:
+  environment: development
+
+postgres:
+  image:
+    pullPolicy: IfNotPresent
+  persistence:
+    size: 2Gi
+
+backend:
+  image:
+    pullPolicy: Never
+    tag: latest
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+nginx:
+  image:
+    pullPolicy: Never
+    tag: latest
+  ingress:
+    host: campaign-master.local

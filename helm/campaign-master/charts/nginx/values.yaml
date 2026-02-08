@@ -1,0 +1,13 @@
+image:
+  repository: 471448382412.dkr.ecr.us-east-1.amazonaws.com/campaign-master-nginx
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  port: 80
+
+ingress:
+  enabled: true
+  className: nginx
+  host: campaign-master.local
+  path: /

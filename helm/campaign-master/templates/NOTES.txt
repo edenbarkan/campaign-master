@@ -1,0 +1,22 @@
+Thank you for installing {{ .Chart.Name }}!
+
+Your release is named {{ .Release.Name }}.
+
+Deployed components:
+{{- if .Values.postgres.enabled }}
+  - PostgreSQL database (StatefulSet)
+{{- end }}
+{{- if .Values.backend.enabled }}
+  - Backend API (Deployment)
+{{- end }}
+{{- if .Values.nginx.enabled }}
+  - Nginx Gateway (Deployment)
+{{- end }}
+
+Access the application:
+{{- if .Values.nginx.ingress.enabled }}
+  Ingress: http://{{ .Values.nginx.ingress.host }}{{ .Values.nginx.ingress.path }}
+{{- end }}
+
+Health check:
+  kubectl exec -it -n {{ .Release.Namespace }} deployment/backend -- curl http://localhost:5000/api/health
