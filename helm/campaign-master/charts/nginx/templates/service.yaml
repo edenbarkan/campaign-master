@@ -8,4 +8,4 @@ spec:
     app: nginx
   ports:
     - port: {{ .Values.service.port }}
-      targetPort: 80
+      targetPort: 5173
