@@ -1,0 +1,12 @@
+dependencies:
+- name: postgres
+  repository: file://./charts/postgres
+  version: 0.1.0
+- name: backend
+  repository: file://./charts/backend
+  version: 0.1.0
+- name: nginx
+  repository: file://./charts/nginx
+  version: 0.1.0
+digest: sha256:9b04eac77f7123b6953411670dc120f935ceb67e0ed8a81d83f318f0af1391b5
+generated: "2026-02-08T18:28:54.139896+02:00"

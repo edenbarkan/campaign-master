@@ -1,0 +1,31 @@
+apiVersion: v2
+name: campaign-master
+description: Campaign Master umbrella chart - deploys backend, nginx gateway, and postgres
+type: application
+version: 0.1.0
+appVersion: "1.0"
+
+maintainers:
+  - name: Campaign Master Team
+
+dependencies:
+  - name: postgres
+    version: "0.1.0"
+    repository: "file://./charts/postgres"
+    condition: postgres.enabled
+    tags:
+      - database
+
+  - name: backend
+    version: "0.1.0"
+    repository: "file://./charts/backend"
+    condition: backend.enabled
+    tags:
+      - application
+
+  - name: nginx
+    version: "0.1.0"
+    repository: "file://./charts/nginx"
+    condition: nginx.enabled
+    tags:
+      - gateway

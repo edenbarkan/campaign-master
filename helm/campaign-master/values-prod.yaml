@@ -1,0 +1,36 @@
+global:
+  environment: production
+
+postgres:
+  image:
+    pullPolicy: IfNotPresent
+  persistence:
+    size: 10Gi
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+backend:
+  image:
+    pullPolicy: IfNotPresent
+    tag: stable
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 512Mi
+
+nginx:
+  image:
+    pullPolicy: IfNotPresent
+    tag: stable
+  ingress:
+    enabled: true
+    className: nginx
+    host: campaign-master.example.com
