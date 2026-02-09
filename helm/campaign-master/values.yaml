@@ -57,7 +57,7 @@ nginx:
   enabled: true
   image:
     repository: 471448382412.dkr.ecr.us-east-1.amazonaws.com/campaign-master-frontend
-    tag: e7e79d6
+    tag: 89ea539  # Updated with Vite host fix
     pullPolicy: IfNotPresent
   service:
     port: 80
