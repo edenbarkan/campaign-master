@@ -64,5 +64,5 @@ nginx:
   ingress:
     enabled: true
     className: nginx
-    host: campaign-master.local
+    host: ""  # Allow access from any hostname (LoadBalancer URL)
     path: /
