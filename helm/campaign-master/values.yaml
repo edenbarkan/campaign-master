@@ -57,7 +57,7 @@ nginx:
   enabled: true
   image:
     repository: 471448382412.dkr.ecr.us-east-1.amazonaws.com/campaign-master-frontend
-    tag: dcc3d6d  # Vite with disabled host check
+    tag: 8e37304  # Production nginx build
     pullPolicy: IfNotPresent
   service:
     port: 80
