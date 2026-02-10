@@ -32,7 +32,7 @@ backend:
   enabled: true
   image:
     repository: 471448382412.dkr.ecr.us-east-1.amazonaws.com/campaign-master-backend
-    tag: e7e79d6  # backend-tag
+    tag: 3f19139  # backend-tag
     pullPolicy: IfNotPresent
   imagePullSecrets: []
   service:
@@ -57,7 +57,7 @@ nginx:
   enabled: true
   image:
     repository: 471448382412.dkr.ecr.us-east-1.amazonaws.com/campaign-master-frontend
-    tag: 8e37304  # frontend-tag
+    tag: 3f19139  # frontend-tag
     pullPolicy: IfNotPresent
   service:
     port: 80
