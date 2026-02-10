@@ -1,5 +1,5 @@
 from flask import Flask
-from prometheus_flask_instrumentator import Instrumentator
+from prometheus_flask_exporter import PrometheusMetrics
 
 from app.config import Config
 from app.extensions import db, migrate, jwt
@@ -22,7 +22,7 @@ def create_app(config_override=None):
     migrate.init_app(app, db)
     jwt.init_app(app)
 
-    Instrumentator().instrument(app).expose(app)
+    PrometheusMetrics(app)
 
     from app import models  # noqa: F401
 
