@@ -1,4 +1,5 @@
 from flask import Flask
+from prometheus_flask_exporter import PrometheusMetrics
 
 from app.config import Config
 from app.extensions import db, migrate, jwt
@@ -20,6 +21,8 @@ def create_app(config_override=None):
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
+
+    PrometheusMetrics(app)
 
     from app import models  # noqa: F401
 
