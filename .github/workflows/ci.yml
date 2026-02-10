@@ -77,51 +77,6 @@ jobs:
           name: built-images
           path: images.txt
 
-      - name: Configure AWS credentials
-        if: github.ref == 'refs/heads/main'
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-
-      - name: Login to Amazon ECR
-        if: github.ref == 'refs/heads/main'
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Push images to ECR (main only)
-        if: github.ref == 'refs/heads/main'
-        run: |
-          set -euo pipefail
-          TAG="${GITHUB_SHA::7}"
-          AWS_ACCOUNT_ID="${{ secrets.AWS_ACCOUNT_ID }}"
-          AWS_REGION="${{ secrets.AWS_REGION }}"
-
-          ECR="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-
-          docker tag "campaign-master-backend:${TAG}"  "${ECR}/campaign-master-backend:${TAG}"
-          docker tag "campaign-master-frontend:${TAG}" "${ECR}/campaign-master-frontend:${TAG}"
-
-          docker push "${ECR}/campaign-master-backend:${TAG}"
-          docker push "${ECR}/campaign-master-frontend:${TAG}"
-
-      - name: Update image tags in Helm values
-        if: github.ref == 'refs/heads/main'
-        run: |
-          set -euo pipefail
-          TAG="${GITHUB_SHA::7}"
-          sed -i "s/^\(\s*tag:\s*\).*# backend-tag$/\1${TAG}  # backend-tag/" helm/campaign-master/values.yaml
-          sed -i "s/^\(\s*tag:\s*\).*# frontend-tag$/\1${TAG}  # frontend-tag/" helm/campaign-master/values.yaml
-
-      - name: Commit and push updated tags
-        if: github.ref == 'refs/heads/main'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add helm/campaign-master/values.yaml
-          git diff --cached --quiet || git commit -m "ci: update image tags to ${GITHUB_SHA::7} [skip ci]"
-          git push
-
       - name: Start stack (docker compose)
         run: |
           docker compose up -d
@@ -169,3 +124,48 @@ jobs:
         if: always()
         run: |
           docker compose down -v
+
+      - name: Configure AWS credentials
+        if: github.ref == 'refs/heads/main'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        if: github.ref == 'refs/heads/main'
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Push images to ECR (main only)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_SHA::7}"
+          AWS_ACCOUNT_ID="${{ secrets.AWS_ACCOUNT_ID }}"
+          AWS_REGION="${{ secrets.AWS_REGION }}"
+
+          ECR="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+
+          docker tag "campaign-master-backend:${TAG}"  "${ECR}/campaign-master-backend:${TAG}"
+          docker tag "campaign-master-frontend:${TAG}" "${ECR}/campaign-master-frontend:${TAG}"
+
+          docker push "${ECR}/campaign-master-backend:${TAG}"
+          docker push "${ECR}/campaign-master-frontend:${TAG}"
+
+      - name: Update image tags in Helm values
+        if: github.ref == 'refs/heads/main'
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_SHA::7}"
+          sed -i "s/^\(\s*tag:\s*\).*# backend-tag$/\1${TAG}  # backend-tag/" helm/campaign-master/values.yaml
+          sed -i "s/^\(\s*tag:\s*\).*# frontend-tag$/\1${TAG}  # frontend-tag/" helm/campaign-master/values.yaml
+
+      - name: Commit and push updated tags
+        if: github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add helm/campaign-master/values.yaml
+          git diff --cached --quiet || git commit -m "ci: update image tags to ${GITHUB_SHA::7} [skip ci]"
+          git push
