@@ -100,6 +100,23 @@ jobs:
           docker push "${ECR}/campaign-master-backend:${TAG}"
           docker push "${ECR}/campaign-master-frontend:${TAG}"
 
+      - name: Update image tags in Helm values
+        if: github.ref == 'refs/heads/main'
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_SHA::7}"
+          sed -i "s/^\(\s*tag:\s*\).*# backend-tag$/\1${TAG}  # backend-tag/" helm/campaign-master/values.yaml
+          sed -i "s/^\(\s*tag:\s*\).*# frontend-tag$/\1${TAG}  # frontend-tag/" helm/campaign-master/values.yaml
+
+      - name: Commit and push updated tags
+        if: github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add helm/campaign-master/values.yaml
+          git diff --cached --quiet || git commit -m "ci: update image tags to ${GITHUB_SHA::7}"
+          git push
+
       - name: Start stack (docker compose)
         run: |
           docker compose up -d
