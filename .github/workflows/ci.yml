@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  id-token: write # Required for AWS OIDC authentication
 
 jobs:
   build-test-smoke:
@@ -125,13 +126,12 @@ jobs:
         run: |
           docker compose down -v
 
-      - name: Configure AWS credentials
+      - name: Configure AWS credentials (OIDC)
         if: github.ref == 'refs/heads/main'
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          role-to-assume: arn:aws:iam::471448382412:role/campaign-master-github-actions-agents
+          aws-region: us-east-1
 
       - name: Login to Amazon ECR
         if: github.ref == 'refs/heads/main'
@@ -142,10 +142,7 @@ jobs:
         run: |
           set -euo pipefail
           TAG="${GITHUB_SHA::7}"
-          AWS_ACCOUNT_ID="${{ secrets.AWS_ACCOUNT_ID }}"
-          AWS_REGION="${{ secrets.AWS_REGION }}"
-
-          ECR="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+          ECR="471448382412.dkr.ecr.us-east-1.amazonaws.com"
 
           docker tag "campaign-master-backend:${TAG}"  "${ECR}/campaign-master-backend:${TAG}"
           docker tag "campaign-master-frontend:${TAG}" "${ECR}/campaign-master-frontend:${TAG}"
